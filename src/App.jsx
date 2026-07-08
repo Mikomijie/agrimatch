@@ -1,5 +1,5 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProductDetail from './pages/ProductDetail'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import FarmerDashboard from './pages/FarmerDashboard'
 import Landing from './pages/Landing'
 import BuyerMarketplace from './pages/BuyerMarketplace'
@@ -19,6 +19,7 @@ function App() {
         <Route path="/marketplace" element={<BuyerMarketplace />} />
         <Route path="/buyer-orders" element={<BuyerOrderHistory />} />
         <Route path="/tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/tracking" element={<Navigate to="/buyer-orders" replace />} />
         <Route path="/logistics" element={<TransporterLoadBoard />} />
         <Route path="/register" element={<Auth />} />
         <Route path="/reviews" element={<RatingsReviews />} />

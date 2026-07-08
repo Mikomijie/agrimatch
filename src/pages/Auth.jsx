@@ -16,6 +16,7 @@ function Auth() {
   const [role, setRole] = useState('farmer')
   const [region, setRegion] = useState('')
   const [error, setError] = useState(null)
+  const [profileImage, setProfileImage] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const handleSignup = async (e) => {
@@ -35,13 +36,32 @@ function Auth() {
       return
     }
 
-    // 2. Create the matching row in our `users` table
+    // 2. Upload profile photo if provided
+    let avatarUrl = null
+    if (profileImage) {
+      const fileExt = profileImage.name.split('.').pop()
+      const fileName = `${authData.user.id}-${Date.now()}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('produce-images')
+        .upload(fileName, profileImage)
+
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage
+          .from('produce-images')
+          .getPublicUrl(fileName)
+        avatarUrl = publicUrlData.publicUrl
+      }
+    }
+
+    // 3. Create the matching row in our `users` table
     const { error: profileError } = await supabase.from('users').insert({
       auth_id: authData.user.id,
       role,
       name,
       phone: phone.startsWith('+233') ? phone : `+233${phone}`,
       region: role === 'farmer' ? region : null,
+      avatar_url: avatarUrl,
     })
 
     setSubmitting(false)
@@ -125,7 +145,17 @@ function Auth() {
                 ))}
               </div>
             </div>
-
+             <div>
+              <label className="text-xs font-semibold tracking-wide text-gray-500">
+                PROFILE PHOTO (OPTIONAL)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProfileImage(e.target.files[0])}
+                className="mt-2 w-full text-sm border border-gray-300 rounded-md px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-[var(--color-primary)] file:text-white file:text-xs"
+              />
+            </div>   
             <div>
               <label className="text-xs font-semibold tracking-wide text-gray-500">FULL NAME</label>
               <input

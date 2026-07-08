@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { getRecommended } from '../lib/matching'
 
-const CATEGORIES = ['All Produce', 'Tubers', 'Grains', 'Legumes', 'Fruits', 'Vegetables']
+const CATEGORIES = ['All Produce', 'Tomatoes', 'Peppers', 'Garden Eggs', 'Okra']
 
 function ProductCard({ item }) {
   return (

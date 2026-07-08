@@ -1,9 +1,8 @@
-import { useParams } from 'react-router-dom'
-import { useCurrentUser } from '../lib/useCurrentUser'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
+
 
 const STATUS_STEPS = ['pending', 'confirmed', 'in_transit', 'delivered']
 
@@ -20,7 +19,7 @@ function OrderTracking() {
   const [error, setError] = useState(null)
 
   const { orderId } = useParams()
-  const { user, loading: userLoading } = useCurrentUser()
+  
 
   useEffect(() => {
     async function fetchOrder() {
