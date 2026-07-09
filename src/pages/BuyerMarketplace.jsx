@@ -326,18 +326,20 @@ function BuyerMarketplace() {
         </div>
      </footer>
 
-      {/* Chat Sidebar */}
-      <div className="hidden md:flex gap-4 fixed right-6 bottom-6 z-40">
-        {!showChat && (
-          <button
-            onClick={() => setShowChat(true)}
-            className="w-12 h-12 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all"
-            title="Open messages"
-          >
-            💬
-          </button>
-        )}
-        {showChat && (
+      {/* Chat Button - Desktop & Mobile */}
+      {!showChat && (
+        <button
+          onClick={() => setShowChat(true)}
+          className="fixed right-6 bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-40 text-2xl"
+          title="Open messages"
+        >
+          💬
+        </button>
+      )}
+
+      {/* Chat Panel - Desktop */}
+      {showChat && (
+        <div className="hidden md:flex gap-4 fixed right-6 bottom-6 z-40">
           <div className="w-96 h-96 shadow-xl">
             <ConversationList
               currentUser={user}
@@ -347,18 +349,51 @@ function BuyerMarketplace() {
               }}
             />
           </div>
-        )}
-        {selectedChat && (
-          <div className="w-96 h-96 shadow-xl">
-            <ChatWindow
-              conversationWith={selectedChat}
-              conversationName={chatName}
-              currentUser={user}
-              onClose={() => setSelectedChat(null)}
-            />
+          {selectedChat && (
+            <div className="w-96 h-96 shadow-xl">
+              <ChatWindow
+                conversationWith={selectedChat}
+                conversationName={chatName}
+                currentUser={user}
+                onClose={() => setSelectedChat(null)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Chat Panel - Mobile Modal */}
+      {showChat && (
+        <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col">
+          <div className="flex-1 flex flex-col bg-white">
+            <button
+              onClick={() => {
+                setShowChat(false)
+                setSelectedChat(null)
+              }}
+              className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl z-50"
+            >
+              ✕
+            </button>
+            {!selectedChat ? (
+              <ConversationList
+                currentUser={user}
+                onSelectConversation={(id, name) => {
+                  setSelectedChat(id)
+                  setChatName(name)
+                }}
+              />
+            ) : (
+              <ChatWindow
+                conversationWith={selectedChat}
+                conversationName={chatName}
+                currentUser={user}
+                onClose={() => setSelectedChat(null)}
+              />
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
