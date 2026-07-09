@@ -27,11 +27,13 @@ export function useCurrentUser() {
 
     fetchUser()
 
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    const { data } = supabase.auth.onAuthStateChange(() => {
       fetchUser()
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      data?.subscription?.unsubscribe()
+    }
   }, [])
 
   return { user, loading }
