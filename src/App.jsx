@@ -9,6 +9,7 @@ import TransporterLoadBoard from './pages/TransporterLoadBoard'
 import RatingsReviews from './pages/RatingsReviews'
 import USSDSimulator from './pages/USSDSimulator'
 import Terms from './pages/Terms'
+import RoleSwitch from './pages/RoleSwitch'
 import Auth from './pages/Auth'
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/reviews" element={<RatingsReviews />} />
         <Route path="/ussd" element={<USSDSimulator />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/role-switch" element={<RoleSwitch />} />
       </Routes>
     </BrowserRouter>
   )
