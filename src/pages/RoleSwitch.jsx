@@ -31,6 +31,12 @@ function RoleSwitch() {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md text-center"
       >
+        <button
+          onClick={() => navigate('/auth')}
+          className="mb-4 text-sm font-semibold text-gray-600 hover:text-[#1B5E20] transition-colors text-left"
+        >
+          ← Back
+        </button>
         <h1 className="text-4xl font-bold text-[#1B5E20] mb-3">AgriMatch</h1>
         <p className="text-gray-600 text-base mb-12">What would you like to do today?</p>
 

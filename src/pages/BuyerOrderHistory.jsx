@@ -46,6 +46,12 @@ function BuyerOrderHistory() {
           AgriMatch
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
+          <button
+            onClick={() => window.history.back()}
+            className="text-gray-600 hover:text-[var(--color-primary)] transition-colors font-semibold"
+          >
+            ← Back
+          </button>
           <Link to="/marketplace">Marketplace</Link>
           <span className="pb-1 border-b-2 border-[var(--color-primary)]">My Orders</span>
           <Link to="/dashboard">Dashboard</Link>

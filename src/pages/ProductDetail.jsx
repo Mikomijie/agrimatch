@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { useNavigate } from 'react-router-dom'
 
 function ProductDetail() {
   const { id } = useParams()
@@ -10,6 +11,7 @@ function ProductDetail() {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const navigate = useNavigate()
 
   const [quantity, setQuantity] = useState(50)
   const [confirmed, setConfirmed] = useState(false)
@@ -70,6 +72,12 @@ function ProductDetail() {
           AgriMatch
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
+          <button
+            onClick={() => navigate('/marketplace')}
+            className="text-gray-600 hover:text-[var(--color-primary)] transition-colors font-semibold"
+          >
+            ← Back
+          </button>
           <Link to="/marketplace" className="pb-1 border-b-2 border-[var(--color-primary)]">Marketplace</Link>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/logistics">Logistics</Link>

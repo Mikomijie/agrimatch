@@ -60,6 +60,9 @@ function OrderTracking() {
           AgriMatch
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
+          <Link to="/buyer-orders" className="text-gray-600 hover:text-[var(--color-primary)] transition-colors font-semibold">
+            ← Back to Orders
+          </Link>
           <Link to="/marketplace">Marketplace</Link>
           <Link to="/dashboard" className="pb-1 border-b-2 border-[var(--color-primary)]">Dashboard</Link>
           <Link to="/logistics">Logistics</Link>

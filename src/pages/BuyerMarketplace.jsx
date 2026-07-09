@@ -87,7 +87,13 @@ function BuyerMarketplace() {
         <Link to="/" className="font-[var(--font-heading)] italic text-2xl text-[var(--color-primary)]">
           AgriMatch
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
+       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
+          <button
+            onClick={() => window.history.back()}
+            className="text-gray-600 hover:text-[var(--color-primary)] transition-colors font-semibold"
+          >
+            ← Back
+          </button>
           <span className="pb-1 border-b-2 border-[var(--color-primary)]">Marketplace</span>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/logistics">Logistics</Link>
