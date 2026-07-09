@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import FarmerMap from '../components/FarmerMap'
 import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
 
@@ -20,6 +21,7 @@ function BuyerMarketplace() {
   const [selectedLocation, setSelectedLocation] = useState('')
   const [priceRange, setPriceRange] = useState([0, 5000])
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState('list')
   const [showChat, setShowChat] = useState(false)
   const [selectedChat, setSelectedChat] = useState(null)
   const [chatName, setChatName] = useState('')
@@ -128,6 +130,28 @@ function BuyerMarketplace() {
                 {activeFilterCount}
               </span>
             )}
+            <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-gray-300 text-gray-600'
+              }`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                viewMode === 'map'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-gray-300 text-gray-600'
+              }`}
+            >
+              Map
+            </button>
+          </div>
           </button>
         </div>
 
@@ -250,7 +274,11 @@ function BuyerMarketplace() {
               </div>
             )}
 
-            {!loading && !error && listings.length > 0 && (
+            {!loading && !error && listings.length > 0 && viewMode === 'map' && (
+              <FarmerMap listings={listings} />
+            )}
+
+            {!loading && !error && listings.length > 0 && viewMode === 'list' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {listings.map((listing) => (
                   <motion.div

@@ -37,6 +37,10 @@ function FarmerDashboard() {
   const [selectedChat, setSelectedChat] = useState(null)
   const [chatName, setChatName] = useState('')
   const [listingCount, setListingCount] = useState(0)
+  const [editingListing, setEditingListing] = useState(null)
+  const [editQuantity, setEditQuantity] = useState('')
+  const [editPrice, setEditPrice] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0]
@@ -106,7 +110,49 @@ function FarmerDashboard() {
       setTimeout(() => setSuccess(false), 3000)
     }
   }
+const startEdit = (listing) => {
+    setEditingListing(listing.id)
+    setEditQuantity(listing.quantity)
+    setEditPrice(listing.price_per_unit)
+  }
 
+  const cancelEdit = () => {
+    setEditingListing(null)
+    setEditQuantity('')
+    setEditPrice('')
+  }
+
+  const saveEdit = async (listingId) => {
+    const { error } = await supabase
+      .from('listings')
+      .update({
+        quantity: Number(editQuantity),
+        price_per_unit: Number(editPrice),
+      })
+      .eq('id', listingId)
+
+    if (!error) {
+      setMyListings((prev) =>
+        prev.map((l) =>
+          l.id === listingId
+            ? { ...l, quantity: Number(editQuantity), price_per_unit: Number(editPrice) }
+            : l
+        )
+      )
+      cancelEdit()
+    }
+  }
+
+  const deleteListing = async (listingId) => {
+    setDeletingId(listingId)
+    const { error } = await supabase.from('listings').delete().eq('id', listingId)
+
+    if (!error) {
+      setMyListings((prev) => prev.filter((l) => l.id !== listingId))
+      setListingCount((prev) => prev - 1)
+    }
+    setDeletingId(null)
+  }
   useEffect(() => {
     async function fetchMyListings() {
       if (!user) return
@@ -418,23 +464,83 @@ function FarmerDashboard() {
                   No listings yet. Publish your first harvest above.
                 </p>
               ) : (
-                <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto">
+                <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
                   {myListings.map((listing) => (
                     <div
                       key={listing.id}
-                      className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <img
-                        src={listing.image_url}
-                        alt={listing.crop_type}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-800 text-xs sm:text-sm truncate">{listing.crop_type}</p>
-                        <p className="text-xs text-gray-600">
-                          {listing.quantity}kg at GH₵{listing.price_per_unit}/kg
-                        </p>
-                      </div>
+                      {editingListing === listing.id ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={listing.image_url}
+                              alt={listing.crop_type}
+                              className="w-10 h-10 rounded object-cover flex-shrink-0"
+                            />
+                            <p className="font-semibold text-gray-800 text-xs sm:text-sm">{listing.crop_type}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              value={editQuantity}
+                              onChange={(e) => setEditQuantity(e.target.value)}
+                              placeholder="Qty (kg)"
+                              className="w-1/2 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-[#1B5E20]"
+                            />
+                            <input
+                              type="number"
+                              value={editPrice}
+                              onChange={(e) => setEditPrice(e.target.value)}
+                              placeholder="Price/kg"
+                              className="w-1/2 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-[#1B5E20]"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveEdit(listing.id)}
+                              className="flex-1 bg-[#1B5E20] text-white text-xs font-semibold py-1.5 rounded hover:brightness-95 transition-all"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="flex-1 border border-gray-300 text-gray-600 text-xs font-semibold py-1.5 rounded hover:bg-gray-100 transition-all"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <img
+                            src={listing.image_url}
+                            alt={listing.crop_type}
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-800 text-xs sm:text-sm truncate">{listing.crop_type}</p>
+                            <p className="text-xs text-gray-600">
+                              {listing.quantity}kg at GH₵{listing.price_per_unit}/kg
+                            </p>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => startEdit(listing)}
+                              className="text-xs font-semibold text-[#1B5E20] border border-[#1B5E20] px-2 py-1 rounded hover:bg-[#1B5E20]/5 transition-all"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteListing(listing.id)}
+                              disabled={deletingId === listing.id}
+                              className="text-xs font-semibold text-red-600 border border-red-300 px-2 py-1 rounded hover:bg-red-50 transition-all disabled:opacity-50"
+                            >
+                              {deletingId === listing.id ? '...' : 'Delete'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
