@@ -138,13 +138,7 @@ function Auth() {
     } else {
       setSuccess('Account created! Redirecting...')
       setTimeout(() => {
-        if (role === 'farmer') {
-          navigate('/dashboard')
-        } else if (role === 'buyer') {
-          navigate('/marketplace')
-        } else {
-          navigate('/logistics')
-        }
+        navigate('/role-switch')
       }, 2500)
     }
   }
@@ -170,15 +164,7 @@ function Auth() {
 
       setSuccess('Logged in successfully! Redirecting...')
       setTimeout(() => {
-        if (userData?.role === 'farmer') {
-          navigate('/dashboard')
-        } else if (userData?.role === 'buyer') {
-          navigate('/marketplace')
-        } else if (userData?.role === 'transporter') {
-          navigate('/logistics')
-        } else {
-          navigate('/')
-        }
+        navigate('/role-switch')
       }, 2500)
     }
   }

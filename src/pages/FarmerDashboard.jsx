@@ -141,6 +141,12 @@ function FarmerDashboard() {
               AgriMatch
             </Link>
             <nav className="hidden md:flex items-center gap-6 sm:gap-8 text-sm font-medium flex-1 justify-center">
+              <button
+                onClick={() => navigate('/role-switch')}
+                className="text-gray-600 hover:text-[#1B5E20] transition-colors font-semibold"
+              >
+                Switch Role
+              </button>
               <Link to="/marketplace" className="text-gray-600 hover:text-[#1B5E20] transition-colors">
                 Marketplace
               </Link>
