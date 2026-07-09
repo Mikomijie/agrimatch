@@ -143,9 +143,17 @@ function ProductDetail() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-4 sm:py-5">
           <div className="flex items-center justify-between gap-4">
-            <Link to="/" className="text-2xl sm:text-3xl font-bold text-[#1B5E20] flex-shrink-0">
-              AgriMatch
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/marketplace')}
+                className="md:hidden text-gray-600 hover:text-[#1B5E20] transition-colors"
+              >
+                ← 
+              </button>
+              <Link to="/" className="text-2xl sm:text-3xl font-bold text-[#1B5E20] flex-shrink-0">
+                AgriMatch
+              </Link>
+            </div>
             <nav className="hidden md:flex items-center gap-6 sm:gap-8 text-sm font-medium flex-1 justify-center">
               <button
                 onClick={() => navigate('/marketplace')}

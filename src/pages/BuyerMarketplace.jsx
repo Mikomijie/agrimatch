@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import ChatWindow from '../components/ChatWindow'
+import ConversationList from '../components/ConversationList'
 
 const CROP_TYPES = ['Tomatoes', 'Peppers', 'Garden Eggs', 'Okra']
 const REGIONS = ['Bono East', 'Ashanti', 'Northern', 'Eastern', 'Volta', 'Greater Accra']
@@ -18,6 +20,9 @@ function BuyerMarketplace() {
   const [selectedLocation, setSelectedLocation] = useState('')
   const [priceRange, setPriceRange] = useState([0, 5000])
   const [showFilters, setShowFilters] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [selectedChat, setSelectedChat] = useState(null)
+  const [chatName, setChatName] = useState('')
 
   // Fetch listings with filters
   useEffect(() => {
@@ -319,7 +324,41 @@ function BuyerMarketplace() {
             © 2026 AgriMatch · Techiman Regional Hub, Bono East
           </p>
         </div>
-      </footer>
+     </footer>
+
+      {/* Chat Sidebar */}
+      <div className="hidden md:flex gap-4 fixed right-6 bottom-6 z-40">
+        {!showChat && (
+          <button
+            onClick={() => setShowChat(true)}
+            className="w-12 h-12 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all"
+            title="Open messages"
+          >
+            💬
+          </button>
+        )}
+        {showChat && (
+          <div className="w-96 h-96 shadow-xl">
+            <ConversationList
+              currentUser={user}
+              onSelectConversation={(id, name) => {
+                setSelectedChat(id)
+                setChatName(name)
+              }}
+            />
+          </div>
+        )}
+        {selectedChat && (
+          <div className="w-96 h-96 shadow-xl">
+            <ChatWindow
+              conversationWith={selectedChat}
+              conversationName={chatName}
+              currentUser={user}
+              onClose={() => setSelectedChat(null)}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
