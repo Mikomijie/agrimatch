@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+
 const CROPS = [
-  { id: 'Tomatoes', label: 'Tomatoes', image: 'https://images.unsplash.com/photo-1592141521565-92f2a7c443e8?w=400&h=300&fit=crop' },
-  { id: 'Peppers', label: 'Peppers', image: 'https://images.unsplash.com/photo-1599599810694-b5ac4dd94549?w=400&h=300&fit=crop' },
-  { id: 'Garden Eggs', label: 'Garden Eggs', image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop' },
-  { id: 'Okra', label: 'Okra', image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop' },
+  { id: 'Tomatoes', label: 'Tomatoes', image: '/images/produce/tomatoes.jpg' },
+  { id: 'Peppers', label: 'Peppers', image: '/images/produce/peppers.jpg' },
+  { id: 'Garden Eggs', label: 'Garden Eggs', image: '/images/produce/garden-eggs.jpg' },
+  { id: 'Okra', label: 'Okra', image: '/images/produce/okra.jpg' },
 ]
 
 const FRESHNESS_OPTIONS = [
@@ -27,15 +28,30 @@ function FarmerDashboard() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
   const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [myListings, setMyListings] = useState([])
+  const [listingCount, setListingCount] = useState(0)
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setImagePreview(event.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handlePublish = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
     setSuccess(false)
 
-    let imageUrl = CROPS.find((c) => c.id === selectedCrop)?.image // fallback default
+    let imageUrl = CROPS.find((c) => c.id === selectedCrop)?.image
 
     if (imageFile) {
       setUploading(true)
@@ -81,8 +97,11 @@ function FarmerDashboard() {
       setPrice('')
       setLocation('')
       setImageFile(null)
+      setImagePreview(null)
+      setTimeout(() => setSuccess(false), 3000)
     }
   }
+
   useEffect(() => {
     async function fetchMyListings() {
       if (!user) return
@@ -92,212 +111,354 @@ function FarmerDashboard() {
         .eq('farmer_id', user.id)
         .order('created_at', { ascending: false })
       setMyListings(data || [])
+      setListingCount(data?.length || 0)
     }
     fetchMyListings()
   }, [user, success])
-if (userLoading) return <p className="p-10 text-center text-gray-500">Loading...</p>
+
+  if (userLoading) return (
+    <div className="p-10 text-center text-gray-500">
+      <p>Loading your dashboard...</p>
+    </div>
+  )
+
   if (!user) return (
     <div className="p-10 text-center">
       <p className="text-gray-500">Please log in to access the farmer dashboard.</p>
-      <Link to="/auth" className="text-[var(--color-primary)] underline mt-2 inline-block">Go to Login</Link>
+      <Link to="/auth" className="text-[#1B5E20] underline mt-2 inline-block font-semibold">
+        Go to Login
+      </Link>
     </div>
   )
+
   return (
-    <div className="min-h-screen bg-white">
-      <header className="flex items-center justify-between px-6 md:px-10 py-5 bg-[var(--color-background-warm)] border-b border-gray-200">
-        <Link to="/" className="font-[var(--font-heading)] italic text-2xl text-[var(--color-primary)]">
-          AgriMatch
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--color-charcoal)]">
-          <Link to="/marketplace" className="text-gray-600 hover:text-[var(--color-charcoal)]">Marketplace</Link>
-          <span className="pb-1 border-b-2 border-[var(--color-primary)]">Dashboard</span>
-          <Link to="/logistics">Logistics</Link>
-        </nav>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 hidden sm:inline">Logged in as {user?.name}</span>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut()
-              window.location.href = '/'
-            }}
-            className="text-xs border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Log Out
-          </button>
+    <div className="min-h-screen bg-gradient-to-b from-[#FAFAF8] to-[#F5F3F0]">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
+          <Link to="/" className="text-3xl font-bold text-[#1B5E20]">
+            AgriMatch
+          </Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link to="/marketplace" className="text-gray-600 hover:text-[#1B5E20] transition-colors">
+              Marketplace
+            </Link>
+            <span className="pb-2 border-b-2 border-[#1B5E20] text-[#1B5E20]">
+              Dashboard
+            </span>
+            <Link to="/logistics" className="text-gray-600 hover:text-[#1B5E20] transition-colors">
+              Logistics
+            </Link>
+          </nav>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-500 hidden sm:inline">
+              {user?.name}
+            </span>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut()
+                window.location.href = '/'
+              }}
+              className="text-xs font-semibold text-[#1B5E20] hover:text-[#0d3a14] transition-colors border-2 border-[#1B5E20] px-4 py-2 rounded-lg"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
-        <form onSubmit={handlePublish} className="md:col-span-2 space-y-6 md:space-y-8">
-          <div>
-            <h1 className="font-[var(--font-heading)] text-4xl md:text-5xl leading-tight">
-              List your fresh <span className="italic text-[var(--color-secondary)]">harvest today.</span>
-            </h1>
-            <p className="mt-3 text-gray-600 max-w-md">
-              Direct access to Ghanaian retailers and bulk buyers.
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-gray-500 mb-3">
-              1. SELECT CROP TYPE
-            </p>
-            <div className="grid grid-cols-4 gap-3">
-              {CROPS.map((crop) => (
-                <button
-                  type="button"
-                  key={crop.id}
-                  onClick={() => setSelectedCrop(crop.id)}
-                  className={`text-left rounded-lg overflow-hidden border transition-all ${
-                    selectedCrop === crop.id
-                      ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30'
-                      : 'border-gray-200 hover:border-[var(--color-primary)]/50'
-                  }`}
-                >
-                  <div className="aspect-[4/3] bg-gray-100">
-                    <img src={crop.image} alt={crop.label} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="px-3 py-2 text-sm font-medium">{crop.label}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold tracking-wide text-gray-500">
-              UPLOAD A REAL PHOTO (OPTIONAL — uses default crop image if skipped)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files[0])}
-              className="mt-2 w-full text-sm border border-gray-300 rounded-md px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-[var(--color-primary)] file:text-white file:text-xs"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* LEFT COLUMN - Form */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Hero Section */}
             <div>
-              <label className="text-xs font-semibold tracking-wide text-gray-500">
-                2. TOTAL QUANTITY (KG)
-              </label>
-              <input
-                type="number"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="0.00"
-                className="mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-              />
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+                List your fresh <span className="text-[#2E7D32]">harvest.</span>
+              </h1>
+              <p className="text-lg text-gray-600 max-w-md">
+                Direct access to Ghanaian retailers and bulk buyers. No middlemen, fair prices.
+              </p>
             </div>
-            <div>
-              <label className="text-xs font-semibold tracking-wide text-gray-500">
-                3. PRICE PER KG (GH₵)
-              </label>
-              <input
-                type="number"
-                required
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
-                className="mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="text-xs font-semibold tracking-wide text-gray-500">
-              4. PICKUP LOCATION
-            </label>
-            <input
-              type="text"
-              required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Town, Region (e.g. Techiman, Bono East)"
-              className="mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-            />
-          </div>
+            {/* Form */}
+            <form onSubmit={handlePublish} className="space-y-8">
+              {/* 1. Crop Selection */}
+              <div>
+                <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-5">
+                  1. What are you selling?
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {CROPS.map((crop) => (
+                    <button
+                      type="button"
+                      key={crop.id}
+                      onClick={() => setSelectedCrop(crop.id)}
+                      className={`group rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                        selectedCrop === crop.id
+                          ? 'border-[#1B5E20] ring-2 ring-[#1B5E20]/20 shadow-lg'
+                          : 'border-gray-200 hover:border-[#1B5E20]/50'
+                      }`}
+                    >
+                      <div className="aspect-square bg-gray-100 overflow-hidden">
+                        <img
+                          src={crop.image}
+                          alt={crop.label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                      <div className="px-4 py-3 bg-white text-center">
+                        <p className={`text-sm font-semibold transition-colors ${
+                          selectedCrop === crop.id
+                            ? 'text-[#1B5E20]'
+                            : 'text-gray-700'
+                        }`}>
+                          {crop.label}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div>
-            <label className="text-xs font-semibold tracking-wide text-gray-500">
-              5. HARVEST &amp; FRESHNESS
-            </label>
-            <div className="mt-2 flex flex-wrap gap-3">
-              {FRESHNESS_OPTIONS.map((opt) => (
-                <button
-                  type="button"
-                  key={opt.id}
-                  onClick={() => setFreshness(opt.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm transition-colors ${
-                    freshness === opt.id
-                      ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                      : 'border-gray-300 text-gray-600 hover:border-[var(--color-primary)]/40'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+              {/* 2. Image Upload */}
+              <div>
+                <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-3">
+                  2. Upload photo (optional)
+                </label>
+                <div className="relative">
+                  {imagePreview ? (
+                    <div className="relative rounded-xl overflow-hidden border-2 border-[#1B5E20]">
+                      <img src={imagePreview} alt="Preview" className="w-full h-64 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null)
+                          setImagePreview(null)
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="block border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-[#1B5E20] hover:bg-[#1B5E20]/5 transition-all duration-200">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-gray-700">Click to upload photo</p>
+                        <p className="text-xs text-gray-500">High-quality photos get more buyers</p>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {success && <p className="text-sm text-[var(--color-primary)]">✓ Listing published successfully!</p>}
-
-          <div className="flex gap-3 pt-2">
-              <button
-              type="submit"
-              disabled={submitting}
-              className="bg-[var(--color-secondary)] text-white px-6 py-3 rounded-md font-medium tracking-wide hover:brightness-95 active:scale-[0.98] transition-all disabled:opacity-60"
-            >
-              {uploading ? 'UPLOADING PHOTO...' : submitting ? 'PUBLISHING...' : 'PUBLISH LISTING'}
-            </button>
-            <Link
-              to="/marketplace"
-              className="border border-gray-300 px-6 py-3 rounded-md font-medium tracking-wide hover:bg-gray-50 transition-colors"
-            >
-              VIEW MARKETPLACE
-            </Link>
-            <Link
-  to="/ussd"
-  className="border border-[var(--color-primary)] text-[var(--color-primary)] px-6 py-3 rounded-md font-medium tracking-wide hover:bg-[var(--color-primary)]/5 transition-colors"
->
-  📵 TRY LOW-CONNECTIVITY MODE
-</Link>
-          </div>
-        </form>
-
-        <aside className="space-y-6 md:col-start-3">
-          <div className="border border-gray-200 rounded-lg p-5">
-            <h2 className="font-[var(--font-heading)] text-xl">My Active Listings</h2>
-            {myListings.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">You haven't listed any produce yet.</p>
-            )}
-            <div className="mt-3 space-y-3">
-              {myListings.map((l) => (
-                <div key={l.id} className="flex items-center gap-3 text-sm">
-                  <img src={l.image_url} alt={l.crop_type} className="w-10 h-10 rounded-md object-cover" />
-                  <div>
-                    <p className="font-medium">{l.crop_type}</p>
-                    <p className="text-xs text-gray-500">{l.quantity}kg · GH₵{l.price_per_unit}/kg</p>
+              {/* 3. Quantity & Price */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-3">
+                    3. Quantity (kg)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-[#1B5E20] focus:ring-2 focus:ring-[#1B5E20]/20 transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">kg</span>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-3">
+                    4. Price per kg (GH₵)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-[#1B5E20] focus:ring-2 focus:ring-[#1B5E20]/20 transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">GH₵</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Location */}
+              <div>
+                <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-3">
+                  5. Pickup location
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Techiman, Bono East"
+                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#1B5E20] focus:ring-2 focus:ring-[#1B5E20]/20 transition-all"
+                />
+              </div>
+
+              {/* 6. Freshness */}
+              <div>
+                <label className="block text-sm font-bold tracking-wider text-gray-700 uppercase mb-3">
+                  6. Freshness
+                </label>
+                <div className="space-y-2">
+                  {FRESHNESS_OPTIONS.map((opt) => (
+                    <button
+                      type="button"
+                      key={opt.id}
+                      onClick={() => setFreshness(opt.id)}
+                      className={`w-full px-4 py-3 rounded-lg border-2 font-medium transition-all text-left ${
+                        freshness === opt.id
+                          ? 'bg-[#1B5E20] text-white border-[#1B5E20]'
+                          : 'border-gray-300 text-gray-700 hover:border-[#1B5E20]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alerts */}
+              {error && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-700 font-medium">
+                    Your listing has been published successfully! Buyers can see it now.
+                  </p>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <button
+                  type="submit"
+                  disabled={submitting || uploading}
+                  className="flex-1 bg-[#1B5E20] text-white py-3 px-6 rounded-lg font-bold hover:brightness-95 active:scale-[0.98] transition-all disabled:opacity-60 text-base"
+                >
+                  {uploading ? 'Uploading photo...' : submitting ? 'Publishing...' : 'Publish Listing'}
+                </button>
+                <Link
+                  to="/marketplace"
+                  className="flex-1 border-2 border-[#1B5E20] text-[#1B5E20] py-3 px-6 rounded-lg font-bold hover:bg-[#1B5E20]/5 transition-all text-center text-base"
+                >
+                  View Marketplace
+                </Link>
+              </div>
+            </form>
           </div>
 
-          <div className="border border-gray-200 rounded-lg p-5 bg-[var(--color-background-warm)]">
-            <h2 className="font-[var(--font-heading)] text-xl">Market Insight</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Current market prices in <strong>Techiman Hub</strong> are trending upward for
-              grade-A tomatoes.
-            </p>
-            <div className="mt-4 aspect-[3/4] rounded-md overflow-hidden bg-gray-100">
-             <img
-                src="https://images.pexels.com/photos/3962286/pexels-photo-3962286.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop"
-                alt="Farmer in field" 
-                className="w-full h-full object-cover"
-              />
+          {/* RIGHT COLUMN - Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Profile Card */}
+            <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-[#1B5E20] rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">{user?.name}</h3>
+                  <p className="text-xs text-gray-500">{user?.phone}</p>
+                </div>
+              </div>
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-xs uppercase font-bold text-gray-500 mb-2">Account Role</p>
+                <p className="font-semibold text-gray-800 capitalize">Farmer</p>
+              </div>
+            </div>
+
+            {/* Active Listings Card */}
+            <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-sm">
+              <h2 className="font-bold text-lg text-gray-900 mb-4">My Active Listings</h2>
+              <div className="mb-6 p-4 bg-[#E8F5E9] rounded-lg">
+                <p className="text-xs text-gray-600 uppercase font-bold">Total listings</p>
+                <p className="text-4xl font-bold text-[#1B5E20]">{listingCount}</p>
+              </div>
+
+              {myListings.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  No listings yet. Publish your first harvest above.
+                </p>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {myListings.map((listing) => (
+                    <div
+                      key={listing.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <img
+                        src={listing.image_url}
+                        alt={listing.crop_type}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-800 text-sm">{listing.crop_type}</p>
+                        <p className="text-xs text-gray-600">
+                          {listing.quantity}kg at GH₵{listing.price_per_unit}/kg
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Market Insight Card */}
+            <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden shadow-sm">
+              <div className="aspect-video bg-gray-100 overflow-hidden">
+                <img
+                  src="/images/market/market-general.jpg"
+                  alt="Market insight"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="font-bold text-gray-900 mb-2">Market Trend</h3>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Grade-A tomatoes are trending upward in the Techiman Hub. Buyers are actively looking for quality produce. Consider pricing competitively.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Tips Card */}
+            <div className="bg-[#1B5E20] text-white rounded-xl p-6 shadow-sm">
+              <h3 className="font-bold mb-4">Quick Tips</h3>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-2">
+                  <span className="font-bold text-lg">•</span>
+                  <span>Upload clear, high-quality photos</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold text-lg">•</span>
+                  <span>Price competitively with market trends</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold text-lg">•</span>
+                  <span>Fresh harvests get more interest</span>
+                </li>
+              </ul>
             </div>
           </div>
-        </aside>
+        </div>
       </main>
     </div>
   )

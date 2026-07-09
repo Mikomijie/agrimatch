@@ -8,6 +8,7 @@ import BuyerOrderHistory from './pages/BuyerOrderHistory'
 import TransporterLoadBoard from './pages/TransporterLoadBoard'
 import RatingsReviews from './pages/RatingsReviews'
 import USSDSimulator from './pages/USSDSimulator'
+import Terms from './pages/Terms'
 import Auth from './pages/Auth'
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<FarmerDashboard />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/marketplace" element={<BuyerMarketplace />} />
         <Route path="/buyer-orders" element={<BuyerOrderHistory />} />
         <Route path="/tracking/:orderId" element={<OrderTracking />} />
