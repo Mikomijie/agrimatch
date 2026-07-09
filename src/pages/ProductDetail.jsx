@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useFlutterwave } from 'flutterwave-react-v3'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { notify } from '../lib/notifications'
 
 function ProductDetail() {
   const { id } = useParams()
