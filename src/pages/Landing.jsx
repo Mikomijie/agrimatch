@@ -58,7 +58,7 @@ function Landing() {
       <section 
         className="relative h-[500px] md:h-[600px] flex items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: 'url(/images/market/market-general.jpg)',
+          backgroundImage: 'url(/images/hero-ghana-farming.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -147,7 +147,63 @@ function Landing() {
           </motion.div>
         </div>
       </AnimatedSection>
-  
+  {/* Why AgriMatch */}
+      <AnimatedSection className="bg-white px-6 md:px-10 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-[var(--font-heading)] text-3xl md:text-4xl text-[var(--color-charcoal)]">
+              Why AgriMatch Works
+            </h2>
+            <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
+              Built for Ghana's farmers, buyers, and transporters. Trusted technology that delivers results.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div 
+              variants={fadeUp}
+              transition={{ duration: 0.6 }}
+              className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)]">
+                Real-Time Pricing
+              </h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                No middlemen. Get fair prices updated daily based on live market data.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              variants={fadeUp}
+              transition={{ duration: 0.6 }}
+              className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-4xl mb-4">✓</div>
+              <h3 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)]">
+                Verified Farmers
+              </h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                Every producer is vetted. Trace every kilogram back to its source.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              variants={fadeUp}
+              transition={{ duration: 0.6 }}
+              className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)]">
+                Fast Logistics
+              </h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                Farm to buyer in 12 hours. Coordinated, reliable transport network.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </AnimatedSection>
       {/* Bottom stats */}
       <AnimatedSection className="bg-[var(--color-primary-light)]/40 px-6 md:px-10 py-14 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 text-center">
         <div>

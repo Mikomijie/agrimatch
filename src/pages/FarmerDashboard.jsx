@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 const CROPS = [
-  { id: 'Tomatoes', label: 'Tomatoes', image: '/images/produce/tomatoes.jpg' },
-  { id: 'Peppers', label: 'Peppers', image: '/images/produce/peppers.jpg' },
-  { id: 'Garden Eggs', label: 'Garden Eggs', image: '/images/produce/garden-eggs.jpg' },
-  { id: 'Okra', label: 'Okra', image: '/images/produce/okra.jpg' },
+  { id: 'Tomatoes', label: 'Tomatoes', image: 'https://images.unsplash.com/photo-1592141521565-92f2a7c443e8?w=400&h=300&fit=crop' },
+  { id: 'Peppers', label: 'Peppers', image: 'https://images.unsplash.com/photo-1599599810694-b5ac4dd94549?w=400&h=300&fit=crop' },
+  { id: 'Garden Eggs', label: 'Garden Eggs', image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop' },
+  { id: 'Okra', label: 'Okra', image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop' },
 ]
 
 const FRESHNESS_OPTIONS = [
@@ -290,9 +290,9 @@ if (userLoading) return <p className="p-10 text-center text-gray-500">Loading...
               grade-A tomatoes.
             </p>
             <div className="mt-4 aspect-[3/4] rounded-md overflow-hidden bg-gray-100">
-              <img
-                src="/images/farmers/farmer-portrait.jpg"
-                alt="Farmer in field"
+             <img
+                src="https://images.pexels.com/photos/3962286/pexels-photo-3962286.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop"
+                alt="Farmer in field" 
                 className="w-full h-full object-cover"
               />
             </div>
