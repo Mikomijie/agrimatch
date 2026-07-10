@@ -708,11 +708,11 @@ const startEdit = (listing) => {
         </div>
       )}
 
-      {/* Chat Bubble Button */}
+      {/* Chat Bubble - desktop only */}
       {!showChat && !selectedChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999] text-2xl"
+          className="hidden md:flex fixed right-6 bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999] text-2xl"
           title="Open messages"
         >
           💬
