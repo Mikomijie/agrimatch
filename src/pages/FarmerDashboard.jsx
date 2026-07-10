@@ -324,10 +324,28 @@ const startEdit = (listing) => {
             </div>
           </div>
         </div>
+
+        {/* Mobile bottom nav */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex items-center justify-around px-2 py-3">
+          <Link to="/marketplace" className="flex flex-col items-center text-xs text-gray-600">
+            <span className="text-lg">🛒</span>Market
+          </Link>
+          <button onClick={() => setShowChat(true)} className="relative flex flex-col items-center text-xs text-gray-600">
+            <span className="text-lg">💬</span>Messages
+            {unreadMessages > 0 && <span className="absolute -top-1 right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadMessages}</span>}
+          </button>
+          <Link to="/buyer-orders" className="relative flex flex-col items-center text-xs text-gray-600">
+            <span className="text-lg">📦</span>Orders
+            {pendingOrders > 0 && <span className="absolute -top-1 right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{pendingOrders}</span>}
+          </Link>
+          <Link to="/logistics" className="flex flex-col items-center text-xs text-gray-600">
+            <span className="text-lg">🚛</span>Logistics
+          </Link>
+        </nav>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12 pb-24 md:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
           {/* LEFT COLUMN - Form */}
           <div className="lg:col-span-2 space-y-8 sm:space-y-10">
@@ -694,7 +712,7 @@ const startEdit = (listing) => {
       {!showChat && !selectedChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed right-6 bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-40 text-2xl relative"
+          className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999] text-2xl"
           title="Open messages"
         >
           💬
