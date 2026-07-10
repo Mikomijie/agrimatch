@@ -156,9 +156,9 @@ function OrderTracking() {
   {order.status === 'delivered' && (
     <button
       onClick={async () => {
-        await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id)
-        navigate('/buyer-orders')
-      }}
+  await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id)
+  navigate(`/reviews`)
+}}
       className="w-full mb-4 bg-[#1B5E20] text-white py-3 rounded-lg font-bold hover:brightness-95 transition-all"
     >
       ✓ Confirm Delivery Received

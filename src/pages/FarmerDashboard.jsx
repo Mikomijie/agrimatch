@@ -729,9 +729,9 @@ const startEdit = (listing) => {
       )}
 
       {/* Mobile Chat Modal */}
-      {(showChat || selectedChat) && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col">
-          <div className="flex-1 flex flex-col bg-white mt-16 rounded-t-2xl overflow-hidden">
+{(showChat || selectedChat) && (
+  <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) { setShowChat(false); setSelectedChat(null) } }}>
+    <div className="flex flex-col bg-white mt-20 rounded-t-2xl overflow-hidden" style={{ height: '75vh' }}>
             {!selectedChat ? (
               <ConversationList
                 currentUser={user}
