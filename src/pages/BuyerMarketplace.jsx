@@ -168,8 +168,8 @@ const [newOrders, setNewOrders] = useState(0)
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 md:px-10 py-10">
-        <div className="flex items-center justify-between mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl md:text-4xl">Marketplace</h1>
             <p className="mt-1 text-gray-600 text-sm">
@@ -427,7 +427,7 @@ const [newOrders, setNewOrders] = useState(0)
       {!showChat && !selectedChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed right-6 bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-40 text-2xl relative"
+          className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999] text-2xl"
           title="Open messages"
         >
           💬
