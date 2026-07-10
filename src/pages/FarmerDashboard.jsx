@@ -288,7 +288,7 @@ const startEdit = (listing) => {
                 Logistics
               </Link>
               <button
-  onClick={() => navigate('/orders')}
+  onClick={() => navigate('/buyer-orders')}
   className="relative text-gray-600 hover:text-[#1B5E20] transition-colors text-sm font-medium"
 >
   Orders
