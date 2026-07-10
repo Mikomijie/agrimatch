@@ -1,194 +1,136 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import RequestTransportModal from './RequestTransportModal'
+import { useCurrentUser } from '../lib/useCurrentUser'
 
-const STATUS_FLOW = ['pending', 'confirmed', 'in_transit', 'delivered']
-
-const STATUS_LABELS = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  in_transit: 'In Transit',
-  delivered: 'Delivered',
-}
-
-const NEXT_ACTION_LABEL = {
-  pending: 'Confirm Order',
-  confirmed: 'Mark In Transit',
-  in_transit: 'Mark Delivered',
-}
-
-function FarmerOrders({ user }) {
+function FarmerOrders() {
+  const { user } = useCurrentUser()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [updatingId, setUpdatingId] = useState(null)
-  const [transportModal, setTransportModal] = useState(null)
-  const [requestedOrders, setRequestedOrders] = useState([])
+  const [transportModal, setTransportModal] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [transporterName, setTransporterName] = useState('')
+  const [pickupDate, setPickupDate] = useState('')
+  const [pickupTime, setPickupTime] = useState('')
 
   useEffect(() => {
-    if (!user) return
     fetchOrders()
-
-    // Realtime: refresh when a new order comes in for this farmer's listings
-    const channel = supabase
-      .channel('farmer-orders-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        () => {
-          fetchOrders()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [user])
 
-  async function fetchOrders() {
-    const { data, error } = await supabase
+  const fetchOrders = async () => {
+    if (!user) return
+    const { data } = await supabase
       .from('orders')
-      .select('*, listings!inner(crop_type, location, image_url, farmer_id), users!orders_buyer_id_fkey(name, phone)')
-      .eq('listings.farmer_id', user.id)
+      .select('*, listings(crop_type, quantity, price_per_unit)')
+      .eq('listing_id', (await supabase.from('listings').select('id').eq('farmer_id', user.id)).data?.[0]?.id || '')
       .order('created_at', { ascending: false })
-
-    if (!error) {
-      setOrders(data || [])
-    }
-
-    // Check which orders already have transport requests
-    const { data: requests } = await supabase
-      .from('transport_requests')
-      .select('order_id')
-      .eq('farmer_id', user.id)
-
-    if (requests) {
-      setRequestedOrders(requests.map((r) => r.order_id))
-    }
-
+    setOrders(data || [])
     setLoading(false)
   }
-  async function advanceStatus(order) {
-    const currentIndex = STATUS_FLOW.indexOf(order.status)
-    const nextStatus = STATUS_FLOW[currentIndex + 1]
-    if (!nextStatus) return
 
-    setUpdatingId(order.id)
+  const handleAssignTransporter = async () => {
+    if (!selectedOrder || !transporterName) return
     const { error } = await supabase
       .from('orders')
-      .update({ status: nextStatus })
-      .eq('id', order.id)
-
+      .update({
+        transporter_id: transporterName,
+        pickup_date: pickupDate,
+        pickup_time: pickupTime,
+      })
+      .eq('id', selectedOrder.id)
     if (!error) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === order.id ? { ...o, status: nextStatus } : o))
-      )
+      fetchOrders()
+      setTransportModal(false)
+      setTransporterName('')
+      setPickupDate('')
+      setPickupTime('')
     }
-    setUpdatingId(null)
   }
 
-  const pendingCount = orders.filter((o) => o.status === 'pending').length
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg sm:rounded-xl border-2 border-gray-200 p-4 sm:p-6 shadow-sm">
-        <p className="text-sm text-gray-500 text-center py-4">Loading orders...</p>
-      </div>
-    )
-  }
+  if (loading) return <p className="text-center text-gray-500">Loading orders...</p>
 
   return (
-    <div className="bg-white rounded-lg sm:rounded-xl border-2 border-gray-200 p-4 sm:p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 className="font-bold text-base sm:text-lg text-gray-900">Orders Received</h2>
-        {pendingCount > 0 && (
-          <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-            {pendingCount} new
-          </span>
-        )}
-      </div>
+    <div className="max-w-4xl mx-auto px-6 py-10">
+      <h1 className="font-[var(--font-heading)] text-3xl mb-8">My Orders</h1>
 
       {orders.length === 0 ? (
-        <p className="text-xs sm:text-sm text-gray-500 text-center py-6">
-          No orders yet. Orders placed on your listings will appear here.
-        </p>
+        <p className="text-gray-500">No orders yet.</p>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {orders.map((order) => {
-            const nextLabel = NEXT_ACTION_LABEL[order.status]
-            return (
-              <div
-                key={order.id}
-                className="p-3 bg-gray-50 rounded-lg border border-gray-100"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={order.listings?.image_url}
-                    alt={order.listings?.crop_type}
-                    className="w-12 h-12 rounded object-cover flex-shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-gray-800 text-sm truncate">
-                      {order.listings?.crop_type} · {order.quantity}kg
-                    </p>
-                    <p className="text-xs text-gray-600 truncate">
-                      Buyer: {order.users?.name || 'Unknown'}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      GH₵{Number(order.total_price).toLocaleString()}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${
-                      order.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : order.status === 'confirmed'
-                        ? 'bg-blue-100 text-blue-700'
-                        : order.status === 'in_transit'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}
-                  >
-                    {STATUS_LABELS[order.status]}
-                  </span>
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-lg">{order.listings?.crop_type}</p>
+                  <p className="text-sm text-gray-600">
+                    {order.listings?.quantity}kg @ GH₵{order.listings?.price_per_unit}/kg
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Order ID: {order.id.slice(0, 8)}</p>
                 </div>
-
-                {nextLabel && (
-                  <button
-                    onClick={() => advanceStatus(order)}
-                    disabled={updatingId === order.id}
-                    className="mt-3 w-full bg-[#1B5E20] text-white text-xs font-semibold py-2 rounded hover:brightness-95 transition-all disabled:opacity-50"
-                  >
-                    {updatingId === order.id ? 'Updating...' : nextLabel}
-                  </button>
-                )}
-
-                {order.status === 'confirmed' && (
-                  <button
-                    onClick={() => setTransportModal(order)}
-                    disabled={requestedOrders.includes(order.id)}
-                    className="mt-2 w-full border-2 border-[#1B5E20] text-[#1B5E20] text-xs font-semibold py-2 rounded hover:bg-[#E8F5E9] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {requestedOrders.includes(order.id) ? '✓ Transport Requested' : '🚚 Request Transport'}
-                  </button>
-                )}
+                <div className="text-right">
+                  <p className={`text-sm font-semibold ${order.status === 'delivered' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {order.status}
+                  </p>
+                  {!order.transporter_id && (
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order)
+                        setTransportModal(true)
+                      }}
+                      className="mt-2 text-sm bg-[var(--color-primary)] text-white px-3 py-1 rounded hover:brightness-95"
+                    >
+                      Assign Transport
+                    </button>
+                  )}
+                </div>
               </div>
-            )
-          })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {transportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">Assign Transporter</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Transporter Name"
+                value={transporterName}
+                onChange={(e) => setTransporterName(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+              <input
+                type="date"
+                value={pickupDate}
+                onChange={(e) => setPickupDate(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+              <input
+                type="time"
+                value={pickupTime}
+                onChange={(e) => setPickupTime(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAssignTransporter}
+                  className="flex-1 bg-[var(--color-primary)] text-white py-2 rounded font-semibold hover:brightness-95"
+                >
+                  Assign
+                </button>
+                <button
+                  onClick={() => setTransportModal(false)}
+                  className="flex-1 border border-gray-300 py-2 rounded font-semibold hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
-
-    {transportModal && (
-      <RequestTransportModal
-        order={transportModal}
-        user={user}
-        onClose={() => setTransportModal(null)}
-        onSuccess={() => {
-          setRequestedOrders((prev) => [...prev, transportModal.id])
-        }}
-      />
-    )}
   )
 }
 
