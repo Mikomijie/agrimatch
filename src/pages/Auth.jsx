@@ -140,7 +140,7 @@ function Auth() {
     } else {
       const roleRoutes = { farmer: '/dashboard', buyer: '/marketplace', transporter: '/logistics' }
       notify.success('Account created! Welcome to AgriMatch')
-      setSuccess('Account created! Redirecting...')
+      setSuccess(`You're registered as a ${role.charAt(0).toUpperCase() + role.slice(1)}. You can switch roles anytime. Redirecting...`)
       setTimeout(() => {
         navigate(roleRoutes[role])
       }, 2500)
