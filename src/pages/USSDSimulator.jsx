@@ -68,10 +68,11 @@ function USSDSimulator() {
     }
   }
 
- if (!user?.id) {
-  setStep('done')
-  return
-}
+ const submitListing = async (finalLocation) => {
+    if (!user?.id) {
+      setStep('done')
+      return
+    }
 
     const { error } = await supabase.from('listings').insert({
       farmer_id: user.id,
