@@ -233,6 +233,15 @@ const startEdit = (listing) => {
     return () => supabase.removeChannel(channel)
   }, [user])
 
+  useEffect(() => {
+    if (showChat || selectedChat) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [showChat, selectedChat])
+
   if (userLoading) return (
     <div className="p-10 text-center text-gray-500">
       <p>Loading your dashboard...</p>
@@ -731,7 +740,7 @@ const startEdit = (listing) => {
       {/* Mobile Chat Modal */}
 {(showChat || selectedChat) && (
   <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) { setShowChat(false); setSelectedChat(null) } }}>
-    <div className="flex flex-col bg-white mt-20 rounded-t-2xl overflow-hidden" style={{ height: '75vh' }}>
+    <div className="flex flex-col bg-white rounded-t-2xl overflow-hidden mt-auto" style={{ height: '85dvh' }}>
             {!selectedChat ? (
               <ConversationList
                 currentUser={user}

@@ -87,7 +87,7 @@ const [newOrders, setNewOrders] = useState(0)
     fetchUnread()
 
     // Realtime listener
-    const channel = supabase
+   const channel = supabase
       .channel('buyer-notifications')
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
@@ -101,6 +101,15 @@ const [newOrders, setNewOrders] = useState(0)
 
     return () => supabase.removeChannel(channel)
   }, [user])
+
+  useEffect(() => {
+    if (showChat || selectedChat) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [showChat, selectedChat])
 
   // Reset filters
   const resetFilters = () => {
@@ -460,9 +469,9 @@ const [newOrders, setNewOrders] = useState(0)
       )}
 
       {/* Mobile Chat Modal */}
-      {(showChat || selectedChat) && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col">
-          <div className="flex-1 flex flex-col bg-white mt-16 rounded-t-2xl overflow-hidden">
+{(showChat || selectedChat) && (
+  <div className="md:hidden fixed inset-0 bg-black/50 z-50 flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) { setShowChat(false); setSelectedChat(null) } }}>
+    <div className="flex flex-col bg-white rounded-t-2xl overflow-hidden mt-auto" style={{ height: '85dvh' }}>
             {!selectedChat ? (
               <ConversationList
                 currentUser={user}
