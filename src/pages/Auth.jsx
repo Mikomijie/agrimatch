@@ -96,6 +96,18 @@ function Auth() {
       }
     }
 
+    const { data: existingPhone } = await supabase
+      .from('users')
+      .select('id')
+      .eq('phone', formattedPhone)
+      .maybeSingle()
+
+    if (existingPhone) {
+      setError('This phone number is already registered')
+      setSubmitting(false)
+      return
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
