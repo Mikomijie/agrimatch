@@ -315,7 +315,7 @@ return (
           AgriMatch database as the web app.
         </p>
         <p className="text-xs text-gray-400 text-center mt-2">
-          🔊 Tap the speaker icon to hear each screen read aloud — demonstrating accessibility
+          🔊 Tap the speaker icon to hear each screen read aloud - demonstrating accessibility
           for non-literate users. Production version would use local-language (Twi/Dagbani)
           audio.
         </p>
