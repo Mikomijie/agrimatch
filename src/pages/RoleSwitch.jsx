@@ -29,18 +29,35 @@ function RoleSwitch() {
       .update({ role: roleId })
       .eq('auth_id', user.auth_id)
 
-    setUpdating(false)
-
     if (error) {
+      setUpdating(false)
       notify.error('Failed to update role')
       return
     }
 
     setActiveRole(roleId)
 
+    if (roleId === 'transporter') {
+      const { data: existingTransporter } = await supabase
+        .from('transporters')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      setUpdating(false)
+
+      if (existingTransporter) {
+        navigate('/logistics')
+      } else {
+        navigate('/transporter-registration')
+      }
+      return
+    }
+
+    setUpdating(false)
+
     if (roleId === 'farmer') navigate('/dashboard')
-    else if (roleId === 'buyer') navigate('/marketplace')
-    else navigate('/logistics')
+    else navigate('/marketplace')
   }
 
   return (
