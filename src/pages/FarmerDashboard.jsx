@@ -42,6 +42,7 @@ function FarmerDashboard() {
   const [editQuantity, setEditQuantity] = useState('')
   const [editPrice, setEditPrice] = useState('')
  const [deletingId, setDeletingId] = useState(null)
+const [newListingId, setNewListingId] = useState(null)
 const [showOrderNotification, setShowOrderNotification] = useState(false)
 const [newOrderMessage, setNewOrderMessage] = useState('')
 const [unreadMessages, setUnreadMessages] = useState(0)
@@ -91,15 +92,19 @@ const [pendingOrders, setPendingOrders] = useState(0)
       imageUrl = publicUrlData.publicUrl
     }
 
-    const { error } = await supabase.from('listings').insert({
-      farmer_id: user.id,
-      crop_type: selectedCrop,
-      quantity: Number(quantity),
-      price_per_unit: Number(price),
-      location,
-      freshness,
-      image_url: imageUrl,
-    })
+    const { data: newListing, error } = await supabase
+      .from('listings')
+      .insert({
+        farmer_id: user.id,
+        crop_type: selectedCrop,
+        quantity: Number(quantity),
+        price_per_unit: Number(price),
+        location,
+        freshness,
+        image_url: imageUrl,
+      })
+      .select()
+      .single()
 
     setSubmitting(false)
 
@@ -107,12 +112,16 @@ const [pendingOrders, setPendingOrders] = useState(0)
       setError(error.message)
     } else {
       setSuccess(true)
+      setNewListingId(newListing.id)
       setQuantity('')
       setPrice('')
       setLocation('')
       setImageFile(null)
       setImagePreview(null)
-      setTimeout(() => setSuccess(false), 3000)
+      setTimeout(() => {
+        setSuccess(false)
+        setNewListingId(null)
+      }, 5000)
     }
   }
 const startEdit = (listing) => {
@@ -519,9 +528,27 @@ const startEdit = (listing) => {
 
               {success && (
                 <div className="bg-[var(--color-primary-light)]/20 border-2 border-[var(--color-primary)]/30 rounded-lg p-3 sm:p-4">
-                  <p className="text-xs sm:text-sm text-[var(--color-primary-dark)] font-medium">
+                  <p className="text-xs sm:text-sm text-[var(--color-primary-dark)] font-medium mb-3">
                     Your listing has been published successfully! Buyers can see it now.
                   </p>
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/product/${newListingId}`}
+                      className="text-xs font-bold text-white bg-[var(--color-primary)] px-3 py-1.5 rounded-md hover:brightness-95 transition-all"
+                    >
+                      View Listing
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSuccess(false)
+                        setNewListingId(null)
+                      }}
+                      className="text-xs font-bold text-[var(--color-primary-dark)] border border-[var(--color-primary)]/40 px-3 py-1.5 rounded-md hover:bg-[var(--color-primary)]/5 transition-all"
+                    >
+                      Add Another
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -583,7 +610,11 @@ const startEdit = (listing) => {
                   {myListings.map((listing) => (
                     <div
                       key={listing.id}
-                      className="p-2 sm:p-3 bg-[var(--color-surface)] rounded-lg hover:brightness-95 transition-colors"
+                      className={`p-2 sm:p-3 rounded-lg hover:brightness-95 transition-colors ${
+                        listing.id === newListingId
+                          ? 'bg-[var(--color-secondary-light)]/25 ring-2 ring-[var(--color-secondary)]'
+                          : 'bg-[var(--color-surface)]'
+                      }`}
                     >
                       {editingListing === listing.id ? (
                         <div className="space-y-2">
