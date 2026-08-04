@@ -282,7 +282,7 @@ function ProductDetail() {
             <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 sm:p-5 flex items-center gap-3">
               <span className="text-2xl">⏰</span>
               <p className="text-sm sm:text-base font-semibold text-red-700">
-                Pickup window has closed for this listing.
+                Pickup window has closed for this listing — check the farmer's other active listings below.
               </p>
             </div>
           ) : timeLeft ? (
