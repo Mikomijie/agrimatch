@@ -12,16 +12,16 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.5 }}
-      className="bg-white border-2 border-gray-200 rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+      <div className="relative aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
         <img
           src={order.listings?.image_url}
           alt={order.listings?.crop_type}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-gray-900">
+        <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--color-charcoal)]">
           Awaiting Pickup
         </div>
       </div>
@@ -29,23 +29,23 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
       {/* Content */}
       <div className="p-4 sm:p-6">
         <div className="flex items-start justify-between gap-4 mb-2">
-          <h3 className="font-bold text-lg text-gray-900">{order.listings?.crop_type}</h3>
-          <p className="font-bold text-xl text-[#1B5E20] whitespace-nowrap flex-shrink-0">
+          <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">{order.listings?.crop_type}</h3>
+          <p className="font-bold text-xl text-[var(--color-secondary)] whitespace-nowrap flex-shrink-0">
             GH₵{Number(order.total_price).toLocaleString()}
           </p>
         </div>
 
-        <p className="text-xs sm:text-sm text-gray-600 mb-3">
+        <p className="text-xs sm:text-sm text-[var(--color-charcoal)]/60 mb-3">
           {order.listings?.location} · {order.quantity}kg
         </p>
 
-        <p className="text-sm text-gray-700 mb-4">
+        <p className="text-sm text-[var(--color-charcoal)]/80 mb-4">
           Order for <span className="font-semibold">{order.listings?.users?.name}</span>. Pickup and deliver to buyer's address.
         </p>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-gray-500 font-mono">
+        <div className="border-t border-black/10 pt-4 flex items-center justify-between gap-4">
+          <p className="text-xs text-[var(--color-charcoal)]/40 font-mono">
             REF: {order.id.slice(0, 8).toUpperCase()}
           </p>
 
@@ -54,7 +54,7 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
               {order.status === 'confirmed' && (
                 <button
                   onClick={() => onUpdateStatus(order.id, 'in_transit')}
-                  className="bg-[#2E7D32] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
+                  className="bg-[var(--color-secondary)] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
                 >
                   In Transit
                 </button>
@@ -62,19 +62,19 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
               {order.status === 'in_transit' && (
                 <button
                   onClick={() => onUpdateStatus(order.id, 'delivered')}
-                  className="bg-[#1B5E20] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
+                  className="bg-[var(--color-primary)] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
                 >
                   Delivered
                 </button>
               )}
               {order.status === 'delivered' && (
-                <span className="text-sm font-bold text-[#1B5E20]">✓ Completed</span>
+                <span className="text-sm font-bold text-[var(--color-primary)]">Completed</span>
               )}
             </div>
           ) : (
             <button
               onClick={() => onAccept(order.id)}
-              className="bg-[#1B5E20] text-white px-4 sm:px-6 py-2 rounded-lg text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap flex-shrink-0"
+              className="bg-[var(--color-primary)] text-white px-4 sm:px-6 py-2 rounded-lg text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap flex-shrink-0"
             >
               Accept Load
             </button>
@@ -167,44 +167,44 @@ const handleAccept = async (orderId) => {
   }
 
   if (userLoading) return (
-    <div className="p-10 text-center text-gray-500">
+    <div className="p-10 text-center text-[var(--color-charcoal)]/60">
       <p>Loading...</p>
     </div>
   )
 
   if (!user) return (
     <div className="p-10 text-center">
-      <p className="text-gray-500">Please log in as a transporter to accept loads.</p>
-      <Link to="/auth" className="text-[#1B5E20] underline mt-2 inline-block font-semibold">Go to Login</Link>
+      <p className="text-[var(--color-charcoal)]/60">Please log in as a transporter to accept loads.</p>
+      <Link to="/auth" className="text-[var(--color-primary)] underline mt-2 inline-block font-semibold">Go to Login</Link>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAFAF8] to-[#F5F3F0]">
+    <div className="min-h-screen bg-[var(--color-background-warm)]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-[var(--color-primary-dark)] border-b border-black/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-4 sm:py-5">
           <div className="flex items-center justify-between gap-4">
-            <Link to="/" className="text-2xl sm:text-3xl font-bold text-[#1B5E20] flex-shrink-0">
+            <Link to="/" className="font-[var(--font-heading)] italic text-2xl sm:text-3xl text-white flex-shrink-0">
               AgriMatch
             </Link>
             <nav className="hidden md:flex items-center gap-6 sm:gap-8 text-sm font-medium flex-1 justify-center">
               <button
                 onClick={() => window.history.back()}
-                className="text-gray-600 hover:text-[#1B5E20] transition-colors font-semibold"
+                className="text-white/80 hover:text-white transition-colors font-semibold"
               >
                 ← Back
               </button>
-              <Link to="/marketplace" className="text-gray-600 hover:text-[#1B5E20] transition-colors">
+              <Link to="/marketplace" className="text-white/80 hover:text-white transition-colors">
                 Marketplace
               </Link>
-              <Link to="/dashboard" className="text-gray-600 hover:text-[#1B5E20] transition-colors">
+              <Link to="/dashboard" className="text-white/80 hover:text-white transition-colors">
                 Dashboard
               </Link>
-              <span className="pb-2 border-b-2 border-[#1B5E20] text-[#1B5E20]">Logistics</span>
+              <span className="pb-2 border-b-2 border-white text-white">Logistics</span>
             </nav>
             <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-              <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">
+              <span className="text-xs sm:text-sm text-white/60 hidden sm:inline">
                 {user?.name}
               </span>
               <button
@@ -212,7 +212,7 @@ const handleAccept = async (orderId) => {
                   await supabase.auth.signOut()
                   window.location.href = '/'
                 }}
-                className="text-xs sm:text-sm font-semibold text-[#1B5E20] hover:text-[#0d3a14] transition-colors border-2 border-[#1B5E20] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg whitespace-nowrap"
+                className="text-xs sm:text-sm font-semibold text-white hover:text-white/80 transition-colors border-2 border-white/40 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg whitespace-nowrap"
               >
                 Log Out
               </button>
@@ -225,10 +225,10 @@ const handleAccept = async (orderId) => {
         {/* Hero & Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10 sm:mb-12">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {view === 'available' ? 'Available' : 'My Active'} <span className="text-[#2E7D32]">Loads</span>
+            <h1 className="font-[var(--font-heading)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[var(--color-charcoal)] mb-3 sm:mb-4">
+              {view === 'available' ? 'Available' : 'My Active'} <span className="text-[var(--color-primary)] italic">Loads</span>
             </h1>
-            <p className="text-base sm:text-lg text-gray-600 max-w-md">
+            <p className="text-base sm:text-lg text-[var(--color-charcoal)]/70 max-w-md">
               {view === 'available' 
                 ? 'Discover and secure high-value delivery jobs across Bono East.'
                 : 'Your accepted deliveries and their status.'}
@@ -241,8 +241,8 @@ const handleAccept = async (orderId) => {
               onClick={() => setView('available')}
               className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg text-sm font-bold border-2 transition-all ${
                 view === 'available'
-                  ? 'bg-[#1B5E20] text-white border-[#1B5E20]'
-                  : 'border-gray-300 text-gray-700 hover:border-[#1B5E20]'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)]'
               }`}
             >
               Available
@@ -251,13 +251,13 @@ const handleAccept = async (orderId) => {
               onClick={() => setView('requests')}
               className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg text-sm font-bold border-2 transition-all relative ${
                 view === 'requests'
-                  ? 'bg-[#1B5E20] text-white border-[#1B5E20]'
-                  : 'border-gray-300 text-gray-700 hover:border-[#1B5E20]'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)]'
               }`}
             >
               Requests
               {transportRequests.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-[var(--color-secondary)] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {transportRequests.length}
                 </span>
               )}
@@ -266,8 +266,8 @@ const handleAccept = async (orderId) => {
               onClick={() => setView('myJobs')}
               className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg text-sm font-bold border-2 transition-all ${
                 view === 'myJobs'
-                  ? 'bg-[#1B5E20] text-white border-[#1B5E20]'
-                  : 'border-gray-300 text-gray-700 hover:border-[#1B5E20]'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)]'
               }`}
             >
               My Jobs
@@ -276,12 +276,12 @@ const handleAccept = async (orderId) => {
         </div>
 
         {/* Status Messages */}
-        {loading && <p className="text-center text-gray-600 py-12">Loading loads...</p>}
+        {loading && <p className="text-center text-[var(--color-charcoal)]/60 py-12">Loading loads...</p>}
         {error && <p className="text-center text-red-600 py-12">Error: {error}</p>}
 
         {/* Loads Grid */}
         {!loading && !error && orders.length === 0 && (
-          <p className="text-center text-gray-600 py-12">
+          <p className="text-center text-[var(--color-charcoal)]/60 py-12">
             {view === 'available' ? 'No available loads right now.' : 'No active jobs yet.'}
           </p>
         )}
@@ -303,7 +303,7 @@ const handleAccept = async (orderId) => {
         {!loading && view === 'requests' && (
           <div>
             {transportRequests.length === 0 ? (
-              <p className="text-center text-gray-600 py-12">No transport requests yet.</p>
+              <p className="text-center text-[var(--color-charcoal)]/60 py-12">No transport requests yet.</p>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {transportRequests.map((req) => (
@@ -311,38 +311,38 @@ const handleAccept = async (orderId) => {
                     key={req.id}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                    <div className="relative aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
                       <img
                         src={req.orders?.listings?.image_url}
                         alt={req.orders?.listings?.crop_type}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 px-3 py-1.5 rounded-lg text-xs font-bold">
+                      <div className="absolute top-3 left-3 bg-[var(--color-secondary-light)] text-[var(--color-secondary-dark)] px-3 py-1.5 rounded-lg text-xs font-bold">
                         Transport Needed
                       </div>
                     </div>
                     <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-bold text-lg text-gray-900">
+                        <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">
                           {req.orders?.listings?.crop_type}
                         </h3>
-                        <p className="font-bold text-[#1B5E20] whitespace-nowrap">
+                        <p className="font-bold text-[var(--color-secondary)] whitespace-nowrap">
                           GH₵{Number(req.orders?.total_price).toLocaleString()}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-600 mb-1">
-                        📍 {req.pickup_location} · {req.orders?.quantity}kg
+                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
+                        Location: {req.pickup_location} · {req.orders?.quantity}kg
                       </p>
-                      <p className="text-xs text-gray-600 mb-1">
-                        📅 Pickup: {req.pickup_date}
+                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
+                        Pickup: {req.pickup_date}
                       </p>
-                      <p className="text-xs text-gray-600 mb-3">
-                        👨‍🌾 Farmer: {req.users?.name}
+                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-3">
+                        Farmer: {req.users?.name}
                       </p>
                       {req.notes && (
-                        <p className="text-xs text-gray-500 italic mb-3">
+                        <p className="text-xs text-[var(--color-charcoal)]/50 italic mb-3">
                           "{req.notes}"
                         </p>
                       )}
@@ -363,7 +363,7 @@ const handleAccept = async (orderId) => {
                             notify.error('Failed to accept request')
                           }
                         }}
-                        className="w-full bg-[#1B5E20] text-white py-2.5 rounded-lg text-sm font-bold hover:brightness-95 transition-all"
+                        className="w-full bg-[var(--color-primary)] text-white py-2.5 rounded-lg text-sm font-bold hover:brightness-95 transition-all"
                       >
                         Accept Transport Request
                       </button>
@@ -377,8 +377,8 @@ const handleAccept = async (orderId) => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 px-4 sm:px-6 md:px-10 py-8 sm:py-10 text-center text-sm text-gray-600 mt-12 sm:mt-16">
-        <p className="font-bold text-gray-900 mb-2">AgriMatch</p>
+      <footer className="border-t border-black/10 px-4 sm:px-6 md:px-10 py-8 sm:py-10 text-center text-sm text-[var(--color-charcoal)]/60 mt-12 sm:mt-16">
+        <p className="font-bold text-[var(--color-charcoal)] mb-2">AgriMatch</p>
         <p>© 2026 AgriMatch. Techiman Regional Hub, Bono East.</p>
       </footer>
     </div>
