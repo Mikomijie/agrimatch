@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 import { useActiveRole } from '../lib/useActiveRole'
+import { notify } from '../lib/notifications'
 
 const ROLES = [
   { id: 'farmer', label: 'Farmer', desc: 'List harvests, manage sales' },
@@ -13,12 +16,28 @@ function RoleSwitch() {
   const navigate = useNavigate()
   const { user, loading } = useCurrentUser()
   const [_, setActiveRole] = useActiveRole()
+  const [updating, setUpdating] = useState(false)
 
   if (loading) return <div className="p-10 text-center">Loading...</div>
   if (!user) return navigate('/auth')
 
-  const handleSelectRole = (roleId) => {
+  const handleSelectRole = async (roleId) => {
+    setUpdating(true)
+
+    const { error } = await supabase
+      .from('users')
+      .update({ role: roleId })
+      .eq('auth_id', user.auth_id)
+
+    setUpdating(false)
+
+    if (error) {
+      notify.error('Failed to update role')
+      return
+    }
+
     setActiveRole(roleId)
+
     if (roleId === 'farmer') navigate('/dashboard')
     else if (roleId === 'buyer') navigate('/marketplace')
     else navigate('/logistics')
@@ -32,7 +51,7 @@ function RoleSwitch() {
         className="w-full max-w-md text-center"
       >
         <button
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/')}
           className="mb-4 text-sm font-semibold text-gray-600 hover:text-[#1B5E20] transition-colors text-left"
         >
           ← Back
@@ -45,12 +64,13 @@ function RoleSwitch() {
             <motion.button
               key={role.id}
               onClick={() => handleSelectRole(role.id)}
+              disabled={updating}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-[#1B5E20] hover:bg-[#1B5E20]/5 transition-all text-left bg-white"
+              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-[#1B5E20] hover:bg-[#1B5E20]/5 transition-all text-left bg-white disabled:opacity-60"
             >
               <p className="font-bold text-lg text-gray-900">{role.label}</p>
               <p className="text-sm text-gray-600 mt-1">{role.desc}</p>
