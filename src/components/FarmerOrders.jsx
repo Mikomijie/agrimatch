@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { notify } from '../lib/notifications'
 
 function FarmerOrders() {
   const { user } = useCurrentUser()
@@ -8,9 +9,12 @@ function FarmerOrders() {
   const [loading, setLoading] = useState(true)
   const [transportModal, setTransportModal] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
-  const [transporterName, setTransporterName] = useState('')
+  const [transporters, setTransporters] = useState([])
+  const [selectedTransporterId, setSelectedTransporterId] = useState('')
   const [pickupDate, setPickupDate] = useState('')
-  const [pickupTime, setPickupTime] = useState('')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [transporterDetails, setTransporterDetails] = useState({})
 
   useEffect(() => {
     fetchOrders()
@@ -30,108 +34,207 @@ function FarmerOrders() {
     const listingIds = listings.map(l => l.id)
     const { data } = await supabase
       .from('orders')
-      .select('*, listings(crop_type, quantity, price_per_unit)')
+      .select('*, listings(crop_type, quantity, price_per_unit, location)')
       .in('listing_id', listingIds)
       .order('created_at', { ascending: false })
+
     setOrders(data || [])
+
+    const transporterIds = [...new Set((data || []).filter(o => o.transporter_id).map(o => o.transporter_id))]
+    if (transporterIds.length) {
+      const { data: tData } = await supabase
+        .from('transporters')
+        .select('user_id, vehicle_type, users(name)')
+        .in('user_id', transporterIds)
+      const map = {}
+      tData?.forEach(t => { map[t.user_id] = t })
+      setTransporterDetails(map)
+    }
+
     setLoading(false)
   }
 
-  const handleAssignTransporter = async () => {
-    if (!selectedOrder || !transporterName) return
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        transporter_id: transporterName,
-        pickup_date: pickupDate,
-        pickup_time: pickupTime,
-      })
-      .eq('id', selectedOrder.id)
-    if (!error) {
+  const openTransportModal = async (order) => {
+    setSelectedOrder(order)
+    setTransportModal(true)
+
+    const { data } = await supabase
+      .from('transporters')
+      .select('user_id, vehicle_type, capacity_kg, coverage_area, users(name)')
+    setTransporters(data || [])
+  }
+
+  const closeModal = () => {
+    setTransportModal(false)
+    setSelectedOrder(null)
+    setSelectedTransporterId('')
+    setPickupDate('')
+    setNotes('')
+  }
+
+  const handleRequestTransport = async () => {
+    if (!selectedOrder || !pickupDate) return
+    setSubmitting(true)
+
+    const { error } = await supabase.from('transport_requests').insert({
+      order_id: selectedOrder.id,
+      farmer_id: user.id,
+      pickup_location: selectedOrder.listings?.location || '',
+      pickup_date: pickupDate,
+      notes: notes,
+      status: 'pending',
+      requested_transporter_id: selectedTransporterId || null,
+    })
+
+    setSubmitting(false)
+
+    if (error) {
+      notify.error('Failed to request transport')
+    } else {
+      notify.success(
+        selectedTransporterId
+          ? 'Request sent to selected transporter!'
+          : 'Request sent to all available transporters!'
+      )
+      closeModal()
       fetchOrders()
-      setTransportModal(false)
-      setTransporterName('')
-      setPickupDate('')
-      setPickupTime('')
     }
   }
 
-  if (loading) return <p className="text-center text-gray-500">Loading orders...</p>
+  if (loading) return <p className="text-center text-[var(--color-charcoal)]/60">Loading orders...</p>
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
-      <h1 className="font-[var(--font-heading)] text-3xl mb-8">My Orders</h1>
+    <div className="bg-white rounded-lg sm:rounded-xl border-2 border-black/10 p-4 sm:p-6 shadow-sm">
+      <h2 className="font-[var(--font-heading)] text-base sm:text-lg text-[var(--color-charcoal)] mb-4">My Orders</h2>
 
       {orders.length === 0 ? (
-        <p className="text-gray-500">No orders yet.</p>
+        <p className="text-sm text-[var(--color-charcoal)]/50 text-center py-6">No orders yet.</p>
       ) : (
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-lg">{order.listings?.crop_type}</p>
-                  <p className="text-sm text-gray-600">
-                    {order.listings?.quantity}kg @ GH₵{order.listings?.price_per_unit}/kg
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Order ID: {order.id.slice(0, 8)}</p>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-semibold ${order.status === 'delivered' ? 'text-green-600' : 'text-yellow-600'}`}>
+        <div className="space-y-3">
+          {orders.map((order) => {
+            const transporter = order.transporter_id ? transporterDetails[order.transporter_id] : null
+            return (
+              <div key={order.id} className="bg-[var(--color-surface)] rounded-lg p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-[var(--color-charcoal)]">{order.listings?.crop_type}</p>
+                    <p className="text-xs text-[var(--color-charcoal)]/60">
+                      {order.listings?.quantity}kg @ GH₵{order.listings?.price_per_unit}/kg
+                    </p>
+                  </div>
+                  <p className={`text-xs font-bold flex-shrink-0 ${
+                    order.status === 'delivered' ? 'text-[var(--color-primary)]' : 'text-[var(--color-secondary-dark)]'
+                  }`}>
                     {order.status}
                   </p>
-                  {!order.transporter_id && (
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-black/5">
+                  {transporter ? (
+                    <p className="text-xs text-[var(--color-charcoal)]/70">
+                      Transporter: <span className="font-semibold">{transporter.users?.name}</span> — {transporter.vehicle_type}
+                    </p>
+                  ) : (
                     <button
-                      onClick={() => {
-                        setSelectedOrder(order)
-                        setTransportModal(true)
-                      }}
-                      className="mt-2 text-sm bg-[var(--color-primary)] text-white px-3 py-1 rounded hover:brightness-95"
+                      onClick={() => openTransportModal(order)}
+                      className="text-xs font-semibold text-white bg-[var(--color-primary)] px-3 py-1.5 rounded-md hover:brightness-95 transition-all"
                     >
-                      Assign Transport
+                      Request Transport
                     </button>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
       {transportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-semibold mb-4">Assign Transporter</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto">
+            <h2 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)] mb-4">Request Transport</h2>
+
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Transporter Name"
-                value={transporterName}
-                onChange={(e) => setTransporterName(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-              />
-              <input
-                type="date"
-                value={pickupDate}
-                onChange={(e) => setPickupDate(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-              />
-              <input
-                type="time"
-                value={pickupTime}
-                onChange={(e) => setPickupTime(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-              />
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/70 uppercase">
+                  Choose a Transporter
+                </label>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTransporterId('')}
+                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                      selectedTransporterId === ''
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]/20'
+                        : 'border-black/10'
+                    }`}
+                  >
+                    <p className="font-semibold text-sm text-[var(--color-charcoal)]">Any Available Transporter</p>
+                    <p className="text-xs text-[var(--color-charcoal)]/60">Open request, first to accept gets it</p>
+                  </button>
+
+                  {transporters.map((t) => (
+                    <button
+                      type="button"
+                      key={t.user_id}
+                      onClick={() => setSelectedTransporterId(t.user_id)}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                        selectedTransporterId === t.user_id
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]/20'
+                          : 'border-black/10'
+                      }`}
+                    >
+                      <p className="font-semibold text-sm text-[var(--color-charcoal)]">{t.users?.name}</p>
+                      <p className="text-xs text-[var(--color-charcoal)]/60">
+                        {t.vehicle_type} · Capacity {t.capacity_kg}kg · {t.coverage_area}
+                      </p>
+                    </button>
+                  ))}
+
+                  {transporters.length === 0 && (
+                    <p className="text-xs text-[var(--color-charcoal)]/50">No registered transporters yet — request will go out openly.</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/70 uppercase">
+                  Preferred Pickup Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={pickupDate}
+                  onChange={(e) => setPickupDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="mt-2 w-full border-2 border-black/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/70 uppercase">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. Call before arrival"
+                  className="mt-2 w-full border-2 border-black/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
+                />
+              </div>
+
               <div className="flex gap-2">
                 <button
-                  onClick={handleAssignTransporter}
-                  className="flex-1 bg-[var(--color-primary)] text-white py-2 rounded font-semibold hover:brightness-95"
+                  onClick={handleRequestTransport}
+                  disabled={submitting || !pickupDate}
+                  className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-lg font-semibold hover:brightness-95 disabled:opacity-60 transition-all"
                 >
-                  Assign
+                  {submitting ? 'Sending...' : 'Send Request'}
                 </button>
                 <button
-                  onClick={() => setTransportModal(false)}
-                  className="flex-1 border border-gray-300 py-2 rounded font-semibold hover:bg-gray-50"
+                  onClick={closeModal}
+                  className="flex-1 border-2 border-black/10 py-2.5 rounded-lg font-semibold hover:bg-black/5 transition-all"
                 >
                   Cancel
                 </button>
