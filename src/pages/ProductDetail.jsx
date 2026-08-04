@@ -16,6 +16,8 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(50)
   const [paymentProcessing, setPaymentProcessing] = useState(false)
   const [orderId, setOrderId] = useState(null)
+  const [moreListings, setMoreListings] = useState([])
+  const [timeLeft, setTimeLeft] = useState(null)
 
   useEffect(() => {
     async function fetchProduct() {
@@ -35,6 +37,48 @@ function ProductDetail() {
 
     fetchProduct()
   }, [id])
+
+  useEffect(() => {
+    async function fetchMoreListings() {
+      if (!product?.farmer_id) return
+      const { data } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('farmer_id', product.farmer_id)
+        .neq('id', product.id)
+        .order('created_at', { ascending: false })
+        .limit(4)
+      setMoreListings(data || [])
+    }
+    fetchMoreListings()
+  }, [product])
+
+  useEffect(() => {
+    if (!product || product.freshness === 'Harvesting Tomorrow') return
+
+    const getDeadline = () => {
+      const harvestTime = new Date(product.created_at)
+      if (product.freshness === 'Harvested Yesterday') {
+        harvestTime.setHours(harvestTime.getHours() - 24)
+      }
+      return new Date(harvestTime.getTime() + 12 * 60 * 60 * 1000)
+    }
+
+    const update = () => {
+      const diff = getDeadline() - new Date()
+      if (diff <= 0) {
+        setTimeLeft('closed')
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        setTimeLeft({ hours, minutes })
+      }
+    }
+
+    update()
+    const interval = setInterval(update, 60000)
+    return () => clearInterval(interval)
+  }, [product])
 
   if (loading) return <p className="p-10 text-center text-[var(--color-charcoal)]/60">Loading...</p>
   if (error) return <p className="p-10 text-center text-red-500">Error: {error}</p>
@@ -186,8 +230,8 @@ function ProductDetail() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12">
+        {/* Hero: description + stats + image */}
         <div className="grid md:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-start">
-          {/* Left - Product Info */}
           <div>
             <p className="text-xs sm:text-sm font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-3 sm:mb-4">
               <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] inline-block mr-2 animate-pulse" />
@@ -220,13 +264,81 @@ function ProductDetail() {
             </div>
           </div>
 
-          {/* Right - Product Image & Order */}
-          <div className="space-y-6">
-            {/* Product Image */}
-            <div className="rounded-xl sm:rounded-2xl overflow-hidden border-2 border-black/10 shadow-sm">
-              <img src={product.image_url} alt={product.crop_type} className="w-full h-64 sm:h-80 object-cover" />
-            </div>
+          <div className="rounded-xl sm:rounded-2xl overflow-hidden border-2 border-black/10 shadow-sm">
+            <img src={product.image_url} alt={product.crop_type} className="w-full h-64 sm:h-80 object-cover" />
+          </div>
+        </div>
 
+        {/* Countdown / Urgency Band */}
+        <div className="mt-8 sm:mt-10">
+          {product.freshness === 'Harvesting Tomorrow' ? (
+            <div className="bg-[var(--color-surface)] border-2 border-black/10 rounded-lg p-4 sm:p-5 flex items-center gap-3">
+              <span className="text-2xl">🌱</span>
+              <p className="text-sm sm:text-base font-semibold text-[var(--color-charcoal)]/80">
+                This harvest is expected tomorrow — order now to reserve it.
+              </p>
+            </div>
+          ) : timeLeft === 'closed' ? (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 sm:p-5 flex items-center gap-3">
+              <span className="text-2xl">⏰</span>
+              <p className="text-sm sm:text-base font-semibold text-red-700">
+                Pickup window has closed for this listing.
+              </p>
+            </div>
+          ) : timeLeft ? (
+            <div
+              className={`rounded-lg p-4 sm:p-5 flex items-center gap-3 border-2 ${
+                timeLeft.hours < 2
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-[var(--color-secondary-light)]/20 border-[var(--color-secondary)]/30'
+              }`}
+            >
+              <span className="text-2xl">⏱️</span>
+              <p className={`text-sm sm:text-base font-semibold ${timeLeft.hours < 2 ? 'text-red-700' : 'text-[var(--color-secondary-dark)]'}`}>
+                Pickup window closes in {timeLeft.hours}h {timeLeft.minutes}m — order soon to guarantee this batch.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* More from farmer + Order card */}
+        <div className="grid md:grid-cols-3 gap-8 sm:gap-10 lg:gap-12 mt-10 sm:mt-12">
+          {/* More from this farmer */}
+          <div className="md:col-span-2">
+            <h2 className="font-[var(--font-heading)] text-xl sm:text-2xl text-[var(--color-charcoal)] mb-5">
+              More from {product.users?.name}
+            </h2>
+            {moreListings.length === 0 ? (
+              <p className="text-sm text-[var(--color-charcoal)]/50">No other active listings right now.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                {moreListings.map((listing) => (
+                  <Link
+                    key={listing.id}
+                    to={`/product/${listing.id}`}
+                    className="border-2 border-black/10 rounded-lg overflow-hidden hover:shadow-md hover:border-[var(--color-primary)]/40 transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
+                      <img
+                        src={listing.image_url}
+                        alt={listing.crop_type}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <p className="font-semibold text-sm text-[var(--color-charcoal)]">{listing.crop_type}</p>
+                      <p className="text-xs text-[var(--color-charcoal)]/60 mt-1">
+                        {listing.quantity}kg · GH₵{listing.price_per_unit}/kg
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Grower + Order */}
+          <div className="md:col-span-1 space-y-6">
             {/* Farmer Card */}
             <div className="bg-white rounded-lg sm:rounded-xl border-2 border-black/10 p-4 sm:p-6 shadow-sm">
               <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-4">Verified Grower</p>
@@ -245,7 +357,6 @@ function ProductDetail() {
             <div className="bg-white rounded-lg sm:rounded-xl border-2 border-black/10 p-6 sm:p-8 shadow-sm">
               <h2 className="font-[var(--font-heading)] text-xl sm:text-2xl text-[var(--color-charcoal)] mb-6">Select Order Details</h2>
 
-              {/* Quantity */}
               <div className="mb-8">
                 <label className="block text-xs font-bold tracking-wider text-[var(--color-charcoal)]/70 uppercase mb-4">Quantity (kilograms)</label>
                 <div className="flex items-center gap-4">
@@ -265,7 +376,6 @@ function ProductDetail() {
                 </div>
               </div>
 
-              {/* Pricing */}
               <div className="space-y-3 mb-8 pt-6 border-t border-black/10">
                 <div className="flex justify-between text-sm">
                   <span className="text-[var(--color-charcoal)]/60">Subtotal</span>
@@ -281,7 +391,6 @@ function ProductDetail() {
                 </div>
               </div>
 
-              {/* Payment Security Info */}
               <div className="bg-[var(--color-primary-light)]/20 border-2 border-[var(--color-primary)]/20 rounded-lg p-4 mb-6">
                 <p className="text-sm font-bold text-[var(--color-primary-dark)] mb-2">Secure Payment</p>
                 <p className="text-xs text-[var(--color-charcoal)]/70 leading-relaxed">
@@ -289,14 +398,12 @@ function ProductDetail() {
                 </p>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3 mb-6">
                   <p className="text-sm text-red-700 font-medium">{error}</p>
                 </div>
               )}
 
-              {/* Payment Button */}
               {paymentProcessing ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
