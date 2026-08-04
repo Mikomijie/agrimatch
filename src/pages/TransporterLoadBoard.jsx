@@ -114,11 +114,12 @@ function TransporterLoadBoard() {
       setOrders(data)
     }
 
-    // Fetch transport requests
+    // Fetch transport requests: open requests (no target) OR requests targeted at me
     const { data: requests } = await supabase
       .from('transport_requests')
       .select('*, orders(id, quantity, total_price, status, listings(crop_type, location, image_url)), users!transport_requests_farmer_id_fkey(name, phone)')
       .eq('status', 'pending')
+      .or(`requested_transporter_id.is.null,requested_transporter_id.eq.${user.id}`)
       .order('created_at', { ascending: false })
 
     if (requests) {
@@ -306,70 +307,77 @@ const handleAccept = async (orderId) => {
               <p className="text-center text-[var(--color-charcoal)]/60 py-12">No transport requests yet.</p>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {transportRequests.map((req) => (
-                  <motion.div
-                    key={req.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="relative aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
-                      <img
-                        src={req.orders?.listings?.image_url}
-                        alt={req.orders?.listings?.crop_type}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3 bg-[var(--color-secondary-light)] text-[var(--color-secondary-dark)] px-3 py-1.5 rounded-lg text-xs font-bold">
-                        Transport Needed
+                {transportRequests.map((req) => {
+                  const isDirect = req.requested_transporter_id === user.id
+                  return (
+                    <motion.div
+                      key={req.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="relative aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
+                        <img
+                          src={req.orders?.listings?.image_url}
+                          alt={req.orders?.listings?.crop_type}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-lg text-xs font-bold ${
+                          isDirect
+                            ? 'bg-[var(--color-primary)] text-white'
+                            : 'bg-[var(--color-secondary-light)] text-[var(--color-secondary-dark)]'
+                        }`}>
+                          {isDirect ? 'Direct Request' : 'Open Request'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">
-                          {req.orders?.listings?.crop_type}
-                        </h3>
-                        <p className="font-bold text-[var(--color-secondary)] whitespace-nowrap">
-                          GH₵{Number(req.orders?.total_price).toLocaleString()}
+                      <div className="p-4 sm:p-5">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">
+                            {req.orders?.listings?.crop_type}
+                          </h3>
+                          <p className="font-bold text-[var(--color-secondary)] whitespace-nowrap">
+                            GH₵{Number(req.orders?.total_price).toLocaleString()}
+                          </p>
+                        </div>
+                        <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
+                          Location: {req.pickup_location} · {req.orders?.quantity}kg
                         </p>
+                        <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
+                          Pickup: {req.pickup_date}
+                        </p>
+                        <p className="text-xs text-[var(--color-charcoal)]/60 mb-3">
+                          Farmer: {req.users?.name}
+                        </p>
+                        {req.notes && (
+                          <p className="text-xs text-[var(--color-charcoal)]/50 italic mb-3">
+                            "{req.notes}"
+                          </p>
+                        )}
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from('transport_requests')
+                              .update({ status: 'accepted', transporter_id: user.id })
+                              .eq('id', req.id)
+                            if (!error) {
+                              await supabase
+                                .from('orders')
+                                .update({ transporter_id: user.id, status: 'in_transit' })
+                                .eq('id', req.orders?.id)
+                              notify.success('Transport request accepted!')
+                              fetchOrders()
+                            } else {
+                              notify.error('Failed to accept request')
+                            }
+                          }}
+                          className="w-full bg-[var(--color-primary)] text-white py-2.5 rounded-lg text-sm font-bold hover:brightness-95 transition-all"
+                        >
+                          Accept Transport Request
+                        </button>
                       </div>
-                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
-                        Location: {req.pickup_location} · {req.orders?.quantity}kg
-                      </p>
-                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-1">
-                        Pickup: {req.pickup_date}
-                      </p>
-                      <p className="text-xs text-[var(--color-charcoal)]/60 mb-3">
-                        Farmer: {req.users?.name}
-                      </p>
-                      {req.notes && (
-                        <p className="text-xs text-[var(--color-charcoal)]/50 italic mb-3">
-                          "{req.notes}"
-                        </p>
-                      )}
-                      <button
-                        onClick={async () => {
-                          const { error } = await supabase
-                            .from('transport_requests')
-                            .update({ status: 'accepted', transporter_id: user.id })
-                            .eq('id', req.id)
-                          if (!error) {
-                            await supabase
-                              .from('orders')
-                              .update({ transporter_id: user.id, status: 'in_transit' })
-                              .eq('id', req.orders?.id)
-                            notify.success('Transport request accepted!')
-                            fetchOrders()
-                          } else {
-                            notify.error('Failed to accept request')
-                          }
-                        }}
-                        className="w-full bg-[var(--color-primary)] text-white py-2.5 rounded-lg text-sm font-bold hover:brightness-95 transition-all"
-                      >
-                        Accept Transport Request
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  )
+                })}
               </div>
             )}
           </div>
