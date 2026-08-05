@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 import { notify } from '../lib/notifications'
 import { isListingExpired } from '../lib/listingHelpers'
+import { getTransportCost } from '../lib/transportCost'
 
 function ChevronLeft() {
   return (
@@ -109,9 +110,9 @@ function ProductDetail() {
     </div>
   )
 
-  const expired = isListingExpired(product)
+ const expired = isListingExpired(product)
   const subtotal = quantity * product.price_per_unit
-  const logisticsFee = 45
+  const logisticsFee = getTransportCost(product.location)
   const total = subtotal + logisticsFee
 
   const handlePaymentClick = async () => {
@@ -283,9 +284,9 @@ function ProductDetail() {
                   {product.location}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-semibold tracking-wider text-[var(--color-charcoal)]/50 uppercase mb-2">Price per kg</p>
-                <p className="font-[var(--font-heading)] text-4xl sm:text-5xl font-bold text-[var(--color-secondary)]">GH₵{product.price_per_unit}</p>
+                <p className="font-[var(--font-heading)] text-2xl sm:text-4xl md:text-5xl font-bold text-[var(--color-secondary)] truncate">GH₵{product.price_per_unit}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold tracking-wider text-[var(--color-charcoal)]/50 uppercase mb-2">Farmer Rating</p>

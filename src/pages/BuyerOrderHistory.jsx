@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 import ReviewModal from '../components/ReviewModal'
+import { cancelOrder } from '../lib/orderHelpers'
 
 const STATUS_COLORS = {
   pending: 'text-[var(--color-secondary-dark)]',
@@ -11,6 +12,7 @@ const STATUS_COLORS = {
   in_transit: 'text-[var(--color-secondary)]',
   delivered: 'text-[var(--color-primary)]',
   completed: 'text-[var(--color-primary)]',
+  cancelled: 'text-red-600',
 }
 
 const STATUS_DOT = {
@@ -19,6 +21,7 @@ const STATUS_DOT = {
   in_transit: 'bg-[var(--color-secondary)] animate-pulse',
   delivered: 'bg-[var(--color-primary)]',
   completed: 'bg-[var(--color-primary)]',
+  cancelled: 'bg-red-600',
 }
 
 function BuyerOrderHistory() {
@@ -29,6 +32,7 @@ function BuyerOrderHistory() {
   const [error, setError] = useState(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [cancellingId, setCancellingId] = useState(null)
 
   const fetchMyOrders = async () => {
     if (!user) return
@@ -50,6 +54,18 @@ function BuyerOrderHistory() {
   useEffect(() => {
     fetchMyOrders()
   }, [user])
+
+  const handleCancel = async (order) => {
+    setCancellingId(order.id)
+    const { error } = await cancelOrder(order)
+    setCancellingId(null)
+
+    if (error) {
+      alert('Failed to cancel order: ' + error)
+    } else {
+      fetchMyOrders()
+    }
+  }
 
   if (userLoading) return (
     <div className="p-10 text-center text-[var(--color-charcoal)]/60">
@@ -168,6 +184,15 @@ function BuyerOrderHistory() {
                       >
                         View details
                       </Link>
+                      {order.status === 'pending' && (
+                        <button
+                          onClick={() => handleCancel(order)}
+                          disabled={cancellingId === order.id}
+                          className="text-xs text-red-600 underline hover:no-underline disabled:opacity-50"
+                        >
+                          {cancellingId === order.id ? 'Cancelling...' : 'Cancel order'}
+                        </button>
+                      )}
                       {(order.status === 'delivered' || order.status === 'completed') && (
                         <button
                           onClick={() => {

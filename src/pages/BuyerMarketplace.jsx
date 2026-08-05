@@ -113,12 +113,13 @@ const [newOrders, setNewOrders] = useState(0)
       if (error) {
         setError(error.message)
       } else {
-        // Apply price range filter and hide expired listings
+       // Apply price range filter, hide expired and sold-out listings
         const filtered = data.filter(
           (listing) =>
             Number(listing.price_per_unit) >= priceRange[0] &&
             Number(listing.price_per_unit) <= priceRange[1] &&
-            !isListingExpired(listing)
+            !isListingExpired(listing) &&
+            listing.quantity > 0
         )
         setListings(filtered)
       }

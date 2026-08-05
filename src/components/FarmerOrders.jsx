@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 import { notify } from '../lib/notifications'
+import { cancelOrder } from '../lib/orderHelpers'
 
 function FarmerOrders() {
   const { user } = useCurrentUser()
@@ -15,6 +16,7 @@ function FarmerOrders() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [transporterDetails, setTransporterDetails] = useState({})
+  const [cancellingId, setCancellingId] = useState(null)
 
   useEffect(() => {
     fetchOrders()
@@ -52,6 +54,19 @@ function FarmerOrders() {
     }
 
     setLoading(false)
+  }
+
+  const handleCancel = async (order) => {
+    setCancellingId(order.id)
+    const { error } = await cancelOrder(order)
+    setCancellingId(null)
+
+    if (error) {
+      notify.error('Failed to cancel order')
+    } else {
+      notify.success('Order cancelled')
+      fetchOrders()
+    }
   }
 
   const openTransportModal = async (order) => {
@@ -123,23 +138,39 @@ function FarmerOrders() {
                     </p>
                   </div>
                   <p className={`text-xs font-bold flex-shrink-0 ${
-                    order.status === 'delivered' || order.status === 'completed' ? 'text-[var(--color-primary)]' : 'text-[var(--color-secondary-dark)]'
+                    order.status === 'delivered' || order.status === 'completed'
+                      ? 'text-[var(--color-primary)]'
+                      : order.status === 'cancelled'
+                      ? 'text-red-600'
+                      : 'text-[var(--color-secondary-dark)]'
                   }`}>
                     {order.status}
                   </p>
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-black/5">
+                <div className="mt-2 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
                   {transporter ? (
                     <p className="text-xs text-[var(--color-charcoal)]/70">
                       Transporter: <span className="font-semibold">{transporter.users?.name}</span> — {transporter.vehicle_type}
                     </p>
+                  ) : order.status === 'pending' ? (
+                    <p className="text-xs text-[var(--color-charcoal)]/50">Awaiting payment confirmation</p>
                   ) : (
                     <button
                       onClick={() => openTransportModal(order)}
                       className="text-xs font-semibold text-white bg-[var(--color-primary)] px-3 py-1.5 rounded-md hover:brightness-95 transition-all"
                     >
                       Request Transport
+                    </button>
+                  )}
+
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => handleCancel(order)}
+                      disabled={cancellingId === order.id}
+                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50 flex-shrink-0"
+                    >
+                      {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
                     </button>
                   )}
                 </div>
