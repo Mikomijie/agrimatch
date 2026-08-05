@@ -50,6 +50,7 @@ function ProductDetail() {
         setError(error.message)
       } else {
         setProduct(data)
+        setQuantity((q) => Math.min(q, data.quantity || q))
       }
       setLoading(false)
     }
@@ -395,9 +396,9 @@ function ProductDetail() {
                     −
                   </button>
                   <span className="text-3xl font-bold text-[var(--color-charcoal)] min-w-[80px] text-center">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity((q) => q + 10)}
-                    disabled={expired}
+                 <button
+                    onClick={() => setQuantity((q) => Math.min(product.quantity, q + 10))}
+                    disabled={expired || quantity >= product.quantity}
                     className="w-12 h-12 border-2 border-black/10 rounded-lg text-xl font-bold text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     +
