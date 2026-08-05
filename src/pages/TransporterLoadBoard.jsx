@@ -5,7 +5,67 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 
-function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
+function PhotoUploadModal({ title, onClose, onSubmit, submitting }) {
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+
+  const handleSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onload = (event) => setPhotoPreview(event.target.result)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+        <h2 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)] mb-2">{title}</h2>
+        <p className="text-sm text-[var(--color-charcoal)]/60 mb-4">
+          Upload a photo confirming produce condition before continuing.
+        </p>
+
+        {photoPreview ? (
+          <div className="relative rounded-lg overflow-hidden border-2 border-[var(--color-primary)] mb-4">
+            <img src={photoPreview} alt="Preview" className="w-full h-48 object-cover" />
+            <button
+              type="button"
+              onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
+              className="absolute top-2 right-2 bg-[var(--color-secondary-dark)] text-white px-2 py-1 rounded text-xs font-semibold"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <label className="block border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all mb-4">
+            <input type="file" accept="image/*" onChange={handleSelect} className="hidden" />
+            <p className="text-sm font-semibold text-[var(--color-charcoal)]/80">Click to upload photo</p>
+          </label>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 border-2 border-black/10 py-2.5 rounded-lg font-semibold text-[var(--color-charcoal)]/70 hover:bg-black/5 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSubmit(photoFile)}
+            disabled={!photoFile || submitting}
+            className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-lg font-semibold hover:brightness-95 disabled:opacity-60 transition-all"
+          >
+            {submitting ? 'Uploading...' : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LoadCard({ order, onAccept, onOpenPhotoModal, isMyJob }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -14,7 +74,6 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
       transition={{ duration: 0.5 }}
       className="bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
-      {/* Image */}
       <div className="relative aspect-[4/3] bg-[var(--color-surface)] overflow-hidden">
         <img
           src={order.listings?.image_url}
@@ -26,7 +85,6 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-4 sm:p-6">
         <div className="flex items-start justify-between gap-4 mb-2">
           <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">{order.listings?.crop_type}</h3>
@@ -43,7 +101,6 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
           Order for <span className="font-semibold">{order.listings?.users?.name}</span>. Pickup and deliver to buyer's address.
         </p>
 
-        {/* Footer */}
         <div className="border-t border-black/10 pt-4 flex items-center justify-between gap-4">
           <p className="text-xs text-[var(--color-charcoal)]/40 font-mono">
             REF: {order.id.slice(0, 8).toUpperCase()}
@@ -53,7 +110,7 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
             <div className="flex gap-2 flex-shrink-0">
               {order.status === 'confirmed' && (
                 <button
-                  onClick={() => onUpdateStatus(order.id, 'in_transit')}
+                  onClick={() => onOpenPhotoModal(order, 'pickup')}
                   className="bg-[var(--color-secondary)] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
                 >
                   In Transit
@@ -61,7 +118,7 @@ function LoadCard({ order, onAccept, onUpdateStatus, isMyJob }) {
               )}
               {order.status === 'in_transit' && (
                 <button
-                  onClick={() => onUpdateStatus(order.id, 'delivered')}
+                  onClick={() => onOpenPhotoModal(order, 'delivery')}
                   className="bg-[var(--color-primary)] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold hover:brightness-95 active:scale-[0.98] transition-all whitespace-nowrap"
                 >
                   Delivered
@@ -93,6 +150,8 @@ function TransporterLoadBoard() {
   const { user, loading: userLoading } = useCurrentUser()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [photoModal, setPhotoModal] = useState(null) // { order, type: 'pickup' | 'delivery' }
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   async function fetchOrders() {
     let query = supabase
@@ -114,7 +173,6 @@ function TransporterLoadBoard() {
       setOrders(data)
     }
 
-    // Fetch transport requests: open requests (no target) OR requests targeted at me
     const { data: requests } = await supabase
       .from('transport_requests')
       .select('*, orders(id, quantity, total_price, status, listings(crop_type, location, image_url)), users!transport_requests_farmer_id_fkey(name, phone)')
@@ -134,7 +192,8 @@ function TransporterLoadBoard() {
       fetchOrders()
     }
   }, [view, user])
-const handleAccept = async (orderId) => {
+
+  const handleAccept = async (orderId) => {
     const { error } = await supabase
       .from('orders')
       .update({ transporter_id: user.id, status: 'confirmed' })
@@ -149,20 +208,47 @@ const handleAccept = async (orderId) => {
       fetchOrders()
     }
   }
-  
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    const { error } = await supabase
+  const handlePhotoSubmit = async (photoFile) => {
+    if (!photoFile || !photoModal) return
+    setUploadingPhoto(true)
+
+    const { order, type } = photoModal
+    const fileExt = photoFile.name.split('.').pop()
+    const fileName = `${order.id}-${type}-${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('delivery-photos')
+      .upload(fileName, photoFile)
+
+    if (uploadError) {
+      notify.error('Failed to upload photo')
+      setUploadingPhoto(false)
+      return
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('delivery-photos')
+      .getPublicUrl(fileName)
+
+    const newStatus = type === 'pickup' ? 'in_transit' : 'delivered'
+    const photoColumn = type === 'pickup' ? 'pickup_photo_url' : 'delivery_photo_url'
+
+    const { error: updateError } = await supabase
       .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
+      .update({
+        status: newStatus,
+        [photoColumn]: publicUrlData.publicUrl,
+      })
+      .eq('id', order.id)
 
-    if (error) {
+    setUploadingPhoto(false)
+
+    if (updateError) {
       notify.error('Failed to update status')
-      setError(error.message)
     } else {
-      const statusText = newStatus === 'in_transit' ? 'In Transit' : 'Delivered'
-      notify.success(`Order marked as ${statusText}`)
+      notify.success(`Order marked as ${newStatus === 'in_transit' ? 'In Transit' : 'Delivered'}`)
+      setPhotoModal(null)
       fetchOrders()
     }
   }
@@ -236,7 +322,6 @@ const handleAccept = async (orderId) => {
             </p>
           </div>
 
-          {/* View Switcher */}
           <div className="flex gap-2 flex-shrink-0 flex-wrap">
             <button
               onClick={() => setView('available')}
@@ -276,11 +361,9 @@ const handleAccept = async (orderId) => {
           </div>
         </div>
 
-        {/* Status Messages */}
         {loading && <p className="text-center text-[var(--color-charcoal)]/60 py-12">Loading loads...</p>}
         {error && <p className="text-center text-red-600 py-12">Error: {error}</p>}
 
-        {/* Loads Grid */}
         {!loading && !error && orders.length === 0 && (
           <p className="text-center text-[var(--color-charcoal)]/60 py-12">
             {view === 'available' ? 'No available loads right now.' : 'No active jobs yet.'}
@@ -294,7 +377,7 @@ const handleAccept = async (orderId) => {
                 key={order.id}
                 order={order}
                 onAccept={handleAccept}
-                onUpdateStatus={handleUpdateStatus}
+                onOpenPhotoModal={(o, type) => setPhotoModal({ order: o, type })}
                 isMyJob={view === 'myJobs'}
               />
             ))}
@@ -383,6 +466,15 @@ const handleAccept = async (orderId) => {
           </div>
         )}
       </main>
+
+      {photoModal && (
+        <PhotoUploadModal
+          title={photoModal.type === 'pickup' ? 'Confirm Pickup' : 'Confirm Delivery'}
+          onClose={() => setPhotoModal(null)}
+          onSubmit={handlePhotoSubmit}
+          submitting={uploadingPhoto}
+        />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-black/10 px-4 sm:px-6 md:px-10 py-8 sm:py-10 text-center text-sm text-[var(--color-charcoal)]/60 mt-12 sm:mt-16">
