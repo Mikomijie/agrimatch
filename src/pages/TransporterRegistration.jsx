@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
@@ -10,12 +10,31 @@ const VEHICLE_TYPES = ['Motorbike', 'Pickup Truck', 'Van', 'Truck']
 function TransporterRegistration() {
   const navigate = useNavigate()
   const { user, loading: userLoading } = useCurrentUser()
+  const [checkingExisting, setCheckingExisting] = useState(true)
   const [vehicleType, setVehicleType] = useState('')
   const [capacity, setCapacity] = useState('')
   const [coverageArea, setCoverageArea] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    async function checkExisting() {
+      if (!user) return
+      const { data } = await supabase
+        .from('transporters')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (data) {
+        navigate('/logistics')
+      } else {
+        setCheckingExisting(false)
+      }
+    }
+    if (user) checkExisting()
+  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,7 +64,7 @@ function TransporterRegistration() {
     }
   }
 
-  if (userLoading) return (
+  if (userLoading || checkingExisting) return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-warm)]">
       <p className="text-[var(--color-charcoal)]/60">Loading...</p>
     </div>
