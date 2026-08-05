@@ -160,6 +160,16 @@ function OrderTracking() {
                   </div>
                   <div className={done || active ? '' : 'opacity-50'}>
                     <p className="font-bold text-lg text-[var(--color-charcoal)]">{STATUS_LABELS[step]}</p>
+                    {step === 'in_transit' && order.pickup_photo_url && (i < currentStepIndex || active || order.status === 'completed') && (
+                      <a href={order.pickup_photo_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2">
+                        <img src={order.pickup_photo_url} alt="Pickup confirmation" className="w-24 h-24 rounded-lg object-cover border-2 border-black/10" />
+                      </a>
+                    )}
+                    {step === 'delivered' && order.delivery_photo_url && (done || order.status === 'completed') && (
+                      <a href={order.delivery_photo_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2">
+                        <img src={order.delivery_photo_url} alt="Delivery confirmation" className="w-24 h-24 rounded-lg object-cover border-2 border-black/10" />
+                      </a>
+                    )}
                   </div>
                 </motion.div>
               )

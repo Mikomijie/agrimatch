@@ -123,7 +123,7 @@ function FarmerOrders() {
                     </p>
                   </div>
                   <p className={`text-xs font-bold flex-shrink-0 ${
-                    order.status === 'delivered' ? 'text-[var(--color-primary)]' : 'text-[var(--color-secondary-dark)]'
+                    order.status === 'delivered' || order.status === 'completed' ? 'text-[var(--color-primary)]' : 'text-[var(--color-secondary-dark)]'
                   }`}>
                     {order.status}
                   </p>
@@ -143,6 +143,21 @@ function FarmerOrders() {
                     </button>
                   )}
                 </div>
+
+                {(order.pickup_photo_url || order.delivery_photo_url) && (
+                  <div className="mt-2 pt-2 border-t border-black/5 flex gap-2">
+                    {order.pickup_photo_url && (
+                      <a href={order.pickup_photo_url} target="_blank" rel="noopener noreferrer">
+                        <img src={order.pickup_photo_url} alt="Pickup" className="w-14 h-14 rounded-md object-cover border border-black/10" />
+                      </a>
+                    )}
+                    {order.delivery_photo_url && (
+                      <a href={order.delivery_photo_url} target="_blank" rel="noopener noreferrer">
+                        <img src={order.delivery_photo_url} alt="Delivery" className="w-14 h-14 rounded-md object-cover border border-black/10" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
