@@ -40,8 +40,8 @@ function PhotoUploadModal({ title, onClose, onSubmit, submitting }) {
           </div>
         ) : (
           <label className="block border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all mb-4">
-            <input type="file" accept="image/*" onChange={handleSelect} className="hidden" />
-            <p className="text-sm font-semibold text-[var(--color-charcoal)]/80">Click to upload photo</p>
+            <input type="file" accept="image/*" capture="environment" onChange={handleSelect} className="hidden" />
+            <p className="text-sm font-semibold text-[var(--color-charcoal)]/80">Tap to take a photo</p>
           </label>
         )}
 
@@ -124,7 +124,7 @@ function LoadCard({ order, onAccept, onOpenPhotoModal, isMyJob }) {
                   Delivered
                 </button>
               )}
-              {order.status === 'delivered' && (
+              {(order.status === 'delivered' || order.status === 'completed') && (
                 <span className="text-sm font-bold text-[var(--color-primary)]">Completed</span>
               )}
             </div>
@@ -147,10 +147,11 @@ function TransporterLoadBoard() {
   const [orders, setOrders] = useState([])
   const [transportRequests, setTransportRequests] = useState([])
   const [view, setView] = useState('available')
+  const [myJobsFilter, setMyJobsFilter] = useState('awaiting')
   const { user, loading: userLoading } = useCurrentUser()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [photoModal, setPhotoModal] = useState(null) // { order, type: 'pickup' | 'delivery' }
+  const [photoModal, setPhotoModal] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   async function fetchOrders() {
@@ -205,6 +206,7 @@ function TransporterLoadBoard() {
     } else {
       notify.success('Load accepted! Check "My Jobs"')
       setView('myJobs')
+      setMyJobsFilter('awaiting')
       fetchOrders()
     }
   }
@@ -249,6 +251,7 @@ function TransporterLoadBoard() {
     } else {
       notify.success(`Order marked as ${newStatus === 'in_transit' ? 'In Transit' : 'Delivered'}`)
       setPhotoModal(null)
+      setMyJobsFilter(newStatus === 'in_transit' ? 'in_transit' : 'delivered')
       fetchOrders()
     }
   }
@@ -265,6 +268,17 @@ function TransporterLoadBoard() {
       <Link to="/auth" className="text-[var(--color-primary)] underline mt-2 inline-block font-semibold">Go to Login</Link>
     </div>
   )
+
+  const awaitingCount = orders.filter(o => o.status === 'confirmed').length
+  const inTransitCount = orders.filter(o => o.status === 'in_transit').length
+  const deliveredCount = orders.filter(o => o.status === 'delivered' || o.status === 'completed').length
+
+  const myJobsFiltered = orders.filter((o) => {
+    if (myJobsFilter === 'awaiting') return o.status === 'confirmed'
+    if (myJobsFilter === 'in_transit') return o.status === 'in_transit'
+    if (myJobsFilter === 'delivered') return o.status === 'delivered' || o.status === 'completed'
+    return true
+  })
 
   return (
     <div className="min-h-screen bg-[var(--color-background-warm)]">
@@ -310,7 +324,7 @@ function TransporterLoadBoard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12">
         {/* Hero & Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10 sm:mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6 sm:mb-8">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[var(--color-charcoal)] mb-3 sm:mb-4">
               {view === 'available' ? 'Available' : 'My Active'} <span className="text-[var(--color-primary)] italic">Loads</span>
@@ -361,16 +375,50 @@ function TransporterLoadBoard() {
           </div>
         </div>
 
+        {/* My Jobs sub-filters */}
+        {view === 'myJobs' && (
+          <div className="flex gap-2 flex-wrap mb-8 sm:mb-10">
+            <button
+              onClick={() => setMyJobsFilter('awaiting')}
+              className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all ${
+                myJobsFilter === 'awaiting'
+                  ? 'bg-[var(--color-secondary)] text-white border-[var(--color-secondary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/60 hover:border-[var(--color-secondary)]'
+              }`}
+            >
+              Awaiting Pickup ({awaitingCount})
+            </button>
+            <button
+              onClick={() => setMyJobsFilter('in_transit')}
+              className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all ${
+                myJobsFilter === 'in_transit'
+                  ? 'bg-[var(--color-secondary)] text-white border-[var(--color-secondary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/60 hover:border-[var(--color-secondary)]'
+              }`}
+            >
+              In Transit ({inTransitCount})
+            </button>
+            <button
+              onClick={() => setMyJobsFilter('delivered')}
+              className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all ${
+                myJobsFilter === 'delivered'
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'border-black/10 text-[var(--color-charcoal)]/60 hover:border-[var(--color-primary)]'
+              }`}
+            >
+              Delivered ({deliveredCount})
+            </button>
+          </div>
+        )}
+
         {loading && <p className="text-center text-[var(--color-charcoal)]/60 py-12">Loading loads...</p>}
         {error && <p className="text-center text-red-600 py-12">Error: {error}</p>}
 
-        {!loading && !error && orders.length === 0 && (
-          <p className="text-center text-[var(--color-charcoal)]/60 py-12">
-            {view === 'available' ? 'No available loads right now.' : 'No active jobs yet.'}
-          </p>
+        {!loading && !error && view === 'available' && orders.length === 0 && (
+          <p className="text-center text-[var(--color-charcoal)]/60 py-12">No available loads right now.</p>
         )}
 
-        {!loading && !error && view !== 'requests' && orders.length > 0 && (
+        {!loading && !error && view === 'available' && orders.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {orders.map((order) => (
               <LoadCard
@@ -378,7 +426,25 @@ function TransporterLoadBoard() {
                 order={order}
                 onAccept={handleAccept}
                 onOpenPhotoModal={(o, type) => setPhotoModal({ order: o, type })}
-                isMyJob={view === 'myJobs'}
+                isMyJob={false}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && view === 'myJobs' && myJobsFiltered.length === 0 && (
+          <p className="text-center text-[var(--color-charcoal)]/60 py-12">No jobs in this category yet.</p>
+        )}
+
+        {!loading && !error && view === 'myJobs' && myJobsFiltered.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {myJobsFiltered.map((order) => (
+              <LoadCard
+                key={order.id}
+                order={order}
+                onAccept={handleAccept}
+                onOpenPhotoModal={(o, type) => setPhotoModal({ order: o, type })}
+                isMyJob={true}
               />
             ))}
           </div>
@@ -445,9 +511,11 @@ function TransporterLoadBoard() {
                             if (!error) {
                               await supabase
                                 .from('orders')
-                                .update({ transporter_id: user.id, status: 'in_transit' })
+                                .update({ transporter_id: user.id, status: 'confirmed' })
                                 .eq('id', req.orders?.id)
-                              notify.success('Transport request accepted!')
+                              notify.success('Transport request accepted! Check "My Jobs" to confirm pickup.')
+                              setView('myJobs')
+                              setMyJobsFilter('awaiting')
                               fetchOrders()
                             } else {
                               notify.error('Failed to accept request')
