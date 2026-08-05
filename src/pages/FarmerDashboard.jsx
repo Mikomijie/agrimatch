@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { isListingExpired } from '../lib/listingHelpers'
 import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
 import FarmerOrders from '../components/FarmerOrders'
-import { isListingExpired } from '../lib/listingHelpers'
 
 const CROPS = [
   { id: 'Tomatoes', label: 'Tomatoes', image: '/images/produce/tomatoes.jpg' },
@@ -670,6 +670,9 @@ const startEdit = (listing) => {
                               {listing.crop_type}
                               {isListingExpired(listing) && (
                                 <span className="ml-2 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">EXPIRED</span>
+                              )}
+                              {!isListingExpired(listing) && listing.quantity <= 0 && (
+                                <span className="ml-2 text-[10px] font-bold text-[var(--color-charcoal)]/60 bg-black/5 px-1.5 py-0.5 rounded">SOLD OUT</span>
                               )}
                             </p>
                             <p className="text-xs text-[var(--color-charcoal)]/60">

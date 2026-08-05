@@ -180,6 +180,11 @@ function ProductDetail() {
             return
           }
 
+          await supabase
+            .from('listings')
+            .update({ quantity: Math.max(0, product.quantity - quantity) })
+            .eq('id', product.id)
+
           notify.success('Payment successful! Order confirmed.')
 
           setTimeout(() => {
@@ -427,7 +432,7 @@ function ProductDetail() {
                 </div>
               )}
 
-             {expired ? (
+              {expired ? (
                 <div className="bg-black/5 text-[var(--color-charcoal)]/50 py-3 px-6 rounded-lg text-center font-bold">
                   This listing has expired
                 </div>

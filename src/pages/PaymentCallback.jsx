@@ -21,6 +21,12 @@ function PaymentCallback() {
       const orderId = txRef.replace('AGRIMATCH-', '')
 
       if (status === 'successful' || status === 'completed') {
+        const { data: orderData, error: fetchError } = await supabase
+          .from('orders')
+          .select('listing_id, quantity')
+          .eq('id', orderId)
+          .single()
+
         const { error: updateError } = await supabase
           .from('orders')
           .update({
@@ -34,6 +40,21 @@ function PaymentCallback() {
         if (updateError) {
           setError(updateError.message)
           return
+        }
+
+        if (!fetchError && orderData) {
+          const { data: listingData } = await supabase
+            .from('listings')
+            .select('quantity')
+            .eq('id', orderData.listing_id)
+            .single()
+
+          if (listingData) {
+            await supabase
+              .from('listings')
+              .update({ quantity: Math.max(0, listingData.quantity - orderData.quantity) })
+              .eq('id', orderData.listing_id)
+          }
         }
 
         navigate(`/tracking/${orderId}`)
