@@ -302,6 +302,12 @@ function TransporterLoadBoard() {
               >
                 ← Back
               </button>
+              <button
+                onClick={() => navigate('/role-switch')}
+                className="text-white/80 hover:text-white transition-colors font-semibold"
+              >
+                Switch Role
+              </button>
               <Link to="/marketplace" className="text-white/80 hover:text-white transition-colors">
                 Marketplace
               </Link>
