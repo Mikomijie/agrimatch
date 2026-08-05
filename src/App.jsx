@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProductDetail from './pages/ProductDetail'
+import PaymentCallback from './pages/PaymentCallback'
 import FarmerDashboard from './pages/FarmerDashboard'
 import Landing from './pages/Landing'
 import BuyerMarketplace from './pages/BuyerMarketplace'
@@ -30,6 +31,7 @@ function App() {
         <Route path="/ussd" element={<USSDSimulator />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/role-switch" element={<RoleSwitch />} />
+        <Route path="/payment-callback" element={<PaymentCallback />} />
         <Route path="/transporter-registration" element={<TransporterRegistration />} />
       </Routes>
     </BrowserRouter>

@@ -112,25 +112,6 @@ function ProductDetail() {
   const logisticsFee = 45
   const total = subtotal + logisticsFee
 
-  const flutterConfig = {
-    public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
-    tx_ref: `AGRIMATCH-${Date.now()}`,
-    amount: total,
-    currency: 'GHS',
-    payment_options: 'card,mobilemoney,ussd',
-    customer: {
-      email: user?.email || 'buyer@agrimatch.com',
-      phonenumber: user?.phone || '0550000000',
-      name: user?.name || 'AgriMatch Buyer',
-    },
-    customizations: {
-      title: `AgriMatch - ${product.crop_type}`,
-      description: `${quantity}kg of ${product.crop_type} from ${product.users?.name}`,
-    },
-  }
-
-  const handleFlutterPayment = useFlutterwave(flutterConfig)
-
   const handlePaymentClick = async () => {
     try {
       setPaymentProcessing(true)
@@ -155,6 +136,26 @@ function ProductDetail() {
       }
 
       setOrderId(orderData.id)
+
+      const flutterConfig = {
+        public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+        tx_ref: `AGRIMATCH-${orderData.id}`,
+        amount: total,
+        currency: 'GHS',
+        payment_options: 'card,mobilemoney,ussd',
+        redirect_url: `${window.location.origin}/payment-callback`,
+        customer: {
+          email: user?.email || 'buyer@agrimatch.com',
+          phonenumber: user?.phone || '0550000000',
+          name: user?.name || 'AgriMatch Buyer',
+        },
+        customizations: {
+          title: `AgriMatch - ${product.crop_type}`,
+          description: `${quantity}kg of ${product.crop_type} from ${product.users?.name}`,
+        },
+      }
+
+      const handleFlutterPayment = useFlutterwave(flutterConfig)
 
       handleFlutterPayment({
         onSuccess: async (response) => {
