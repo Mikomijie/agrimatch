@@ -7,6 +7,7 @@ import { getRecommended } from '../lib/matching'
 import FarmerMap from '../components/FarmerMap'
 import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
+import { isListingExpired } from '../lib/listingHelpers'
 
 const CROP_TYPES = ['Tomatoes', 'Peppers', 'Garden Eggs', 'Okra']
 const REGIONS = ['Bono East', 'Ashanti', 'Northern', 'Eastern', 'Volta', 'Greater Accra']
@@ -112,11 +113,12 @@ const [newOrders, setNewOrders] = useState(0)
       if (error) {
         setError(error.message)
       } else {
-        // Apply price range filter (client-side for better performance)
+        // Apply price range filter and hide expired listings
         const filtered = data.filter(
           (listing) =>
             Number(listing.price_per_unit) >= priceRange[0] &&
-            Number(listing.price_per_unit) <= priceRange[1]
+            Number(listing.price_per_unit) <= priceRange[1] &&
+            !isListingExpired(listing)
         )
         setListings(filtered)
       }

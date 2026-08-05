@@ -5,6 +5,7 @@ import { useFlutterwave } from 'flutterwave-react-v3'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
 import { notify } from '../lib/notifications'
+import { isListingExpired } from '../lib/listingHelpers'
 
 function ChevronLeft() {
   return (
@@ -108,6 +109,7 @@ function ProductDetail() {
     </div>
   )
 
+  const expired = isListingExpired(product)
   const subtotal = quantity * product.price_per_unit
   const logisticsFee = 45
   const total = subtotal + logisticsFee
@@ -381,14 +383,16 @@ function ProductDetail() {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 10))}
-                    className="w-12 h-12 border-2 border-black/10 rounded-lg text-xl font-bold text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                    disabled={expired}
+                    className="w-12 h-12 border-2 border-black/10 rounded-lg text-xl font-bold text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     −
                   </button>
                   <span className="text-3xl font-bold text-[var(--color-charcoal)] min-w-[80px] text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => q + 10)}
-                    className="w-12 h-12 border-2 border-black/10 rounded-lg text-xl font-bold text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+                    disabled={expired}
+                    className="w-12 h-12 border-2 border-black/10 rounded-lg text-xl font-bold text-[var(--color-charcoal)]/70 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
@@ -423,7 +427,11 @@ function ProductDetail() {
                 </div>
               )}
 
-              {paymentProcessing ? (
+             {expired ? (
+                <div className="bg-black/5 text-[var(--color-charcoal)]/50 py-3 px-6 rounded-lg text-center font-bold">
+                  This listing has expired
+                </div>
+              ) : paymentProcessing ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

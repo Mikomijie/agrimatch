@@ -5,6 +5,7 @@ import { useCurrentUser } from '../lib/useCurrentUser'
 import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
 import FarmerOrders from '../components/FarmerOrders'
+import { isListingExpired } from '../lib/listingHelpers'
 
 const CROPS = [
   { id: 'Tomatoes', label: 'Tomatoes', image: '/images/produce/tomatoes.jpg' },
@@ -665,7 +666,12 @@ const startEdit = (listing) => {
                             className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0"
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-[var(--color-charcoal)] text-xs sm:text-sm truncate">{listing.crop_type}</p>
+                            <p className="font-semibold text-[var(--color-charcoal)] text-xs sm:text-sm truncate">
+                              {listing.crop_type}
+                              {isListingExpired(listing) && (
+                                <span className="ml-2 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">EXPIRED</span>
+                              )}
+                            </p>
                             <p className="text-xs text-[var(--color-charcoal)]/60">
                               {listing.quantity}kg at GH₵{listing.price_per_unit}/kg
                             </p>
