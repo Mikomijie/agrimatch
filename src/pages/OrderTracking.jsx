@@ -2,6 +2,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
+import { useCurrentUser } from '../lib/useCurrentUser'
+import ReviewModal from '../components/ReviewModal'
 
 const STATUS_STEPS = ['pending', 'confirmed', 'in_transit', 'delivered']
 
@@ -12,45 +14,63 @@ const STATUS_LABELS = {
   delivered: 'Arriving at Destination',
 }
 
+const STATUS_COLORS = {
+  pending: 'text-[var(--color-secondary-dark)]',
+  confirmed: 'text-[var(--color-secondary-dark)]',
+  in_transit: 'text-[var(--color-secondary)]',
+  delivered: 'text-[var(--color-primary)]',
+  completed: 'text-[var(--color-primary)]',
+}
+
+const STATUS_DOT = {
+  pending: 'bg-[var(--color-secondary-dark)] animate-pulse',
+  confirmed: 'bg-[var(--color-secondary-dark)] animate-pulse',
+  in_transit: 'bg-[var(--color-secondary)] animate-pulse',
+  delivered: 'bg-[var(--color-primary)]',
+  completed: 'bg-[var(--color-primary)]',
+}
+
 function OrderTracking() {
   const navigate = useNavigate()
+  const { user } = useCurrentUser()
   const [order, setOrder] = useState(null)
   const [transporter, setTransporter] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
 
   const { orderId } = useParams()
 
-  useEffect(() => {
-    async function fetchOrder() {
-      if (!orderId) return
+  const fetchOrder = async () => {
+    if (!orderId) return
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, listings(crop_type, location, quantity, image_url, users(name))')
-        .eq('id', orderId)
-        .single()
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, listings(crop_type, location, quantity, image_url, users(name))')
+      .eq('id', orderId)
+      .single()
 
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-
-      setOrder(data)
-
-      if (data.transporter_id) {
-        const { data: tData } = await supabase
-          .from('transporters')
-          .select('vehicle_type, capacity_kg, users(name)')
-          .eq('user_id', data.transporter_id)
-          .maybeSingle()
-        setTransporter(tData)
-      }
-
+    if (error) {
+      setError(error.message)
       setLoading(false)
+      return
     }
 
+    setOrder(data)
+
+    if (data.transporter_id) {
+      const { data: tData } = await supabase
+        .from('transporters')
+        .select('vehicle_type, capacity_kg, users(name)')
+        .eq('user_id', data.transporter_id)
+        .maybeSingle()
+      setTransporter(tData)
+    }
+
+    setLoading(false)
+  }
+
+  useEffect(() => {
     fetchOrder()
   }, [orderId])
 
@@ -64,6 +84,12 @@ function OrderTracking() {
   )
 
   const currentStepIndex = STATUS_STEPS.indexOf(order.status)
+
+  const handleConfirmDelivery = async () => {
+    await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id)
+    setOrder((prev) => ({ ...prev, status: 'completed' }))
+    setShowReviewModal(true)
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background-warm)]">
@@ -100,12 +126,12 @@ function OrderTracking() {
                 Tracking your <span className="text-[var(--color-primary)] italic">harvest.</span>
               </h1>
               <p className="text-base sm:text-lg text-[var(--color-charcoal)]/70 max-w-lg">
-  Your order of {order.quantity}kg {order.listings?.crop_type} from {order.listings?.users?.name} is currently {order.status === 'delivered' ? 'delivered.' : 'being processed.'}
+  Your order of {order.quantity}kg {order.listings?.crop_type} from {order.listings?.users?.name} is currently {order.status === 'delivered' || order.status === 'completed' ? 'delivered.' : 'being processed.'}
 </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
-              <span className="text-sm font-bold text-[var(--color-primary)] uppercase">{order.status}</span>
+              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[order.status] || 'bg-[var(--color-charcoal)]/30'}`} />
+              <span className={`text-sm font-bold uppercase ${STATUS_COLORS[order.status] || 'text-[var(--color-charcoal)]/60'}`}>{order.status}</span>
             </div>
           </div>
         </div>
@@ -115,8 +141,8 @@ function OrderTracking() {
           <div className="md:col-span-2 space-y-6 relative">
             <div className="absolute left-[15px] top-0 bottom-0 w-px bg-black/10" />
             {STATUS_STEPS.map((step, i) => {
-              const done = i < currentStepIndex
-              const active = i === currentStepIndex
+              const done = i < currentStepIndex || order.status === 'completed'
+              const active = i === currentStepIndex && order.status !== 'completed'
               return (
                 <motion.div
                   key={step}
@@ -180,13 +206,18 @@ function OrderTracking() {
               <div className="border-t border-black/10 pt-6">
   {order.status === 'delivered' && (
     <button
-      onClick={async () => {
-  await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id)
-  navigate(`/reviews`)
-}}
+      onClick={handleConfirmDelivery}
       className="w-full mb-4 bg-[var(--color-primary)] text-white py-3 rounded-lg font-bold hover:brightness-95 transition-all"
     >
       Confirm Delivery Received
+    </button>
+  )}
+  {order.status === 'completed' && (
+    <button
+      onClick={() => setShowReviewModal(true)}
+      className="w-full mb-4 border-2 border-[var(--color-primary)] text-[var(--color-primary)] py-3 rounded-lg font-bold hover:bg-[var(--color-primary)]/5 transition-all"
+    >
+      Leave a Review
     </button>
   )}
   <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-3">Produce</p>
@@ -206,6 +237,18 @@ function OrderTracking() {
           </div>
         </div>
       </main>
+
+      {showReviewModal && user && (
+        <ReviewModal
+          order={order}
+          buyer={user}
+          farmerName={order.listings?.users?.name}
+          onClose={() => setShowReviewModal(false)}
+          onSuccess={() => {
+            setShowReviewModal(false)
+          }}
+        />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-black/10 px-4 sm:px-6 md:px-10 py-8 sm:py-10 text-center text-sm text-[var(--color-charcoal)]/60 mt-12 sm:mt-16">
