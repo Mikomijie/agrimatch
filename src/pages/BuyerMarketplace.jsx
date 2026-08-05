@@ -3,12 +3,73 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { getRecommended } from '../lib/matching'
 import FarmerMap from '../components/FarmerMap'
 import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
 
 const CROP_TYPES = ['Tomatoes', 'Peppers', 'Garden Eggs', 'Okra']
 const REGIONS = ['Bono East', 'Ashanti', 'Northern', 'Eastern', 'Volta', 'Greater Accra']
+
+function ListingCard({ listing, onMessage }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow group"
+    >
+      <div className="relative h-40 bg-[var(--color-surface)] overflow-hidden">
+        <img
+          src={listing.image_url}
+          alt={listing.crop_type}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+        />
+      </div>
+
+      <div className="p-4">
+        <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">
+          {listing.crop_type}
+        </h3>
+
+        <p className="text-sm text-[var(--color-charcoal)]/60 mt-1">
+          {listing.quantity}kg · GH₵{listing.price_per_unit}/kg
+        </p>
+
+        <p className="text-xs text-[var(--color-charcoal)]/50 mt-2">
+          {listing.location}
+        </p>
+
+        <div className="mt-3 pt-3 border-t border-black/5 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-[var(--color-charcoal)]/80">
+              {listing.users?.name}
+            </p>
+            {listing.users?.rating && (
+              <p className="text-xs text-[var(--color-secondary-dark)]">
+                {listing.users.rating.toFixed(1)} rating
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <Link
+            to={`/product/${listing.id}`}
+            className="block w-full bg-[var(--color-secondary)] text-white px-4 py-2 rounded-md text-sm font-medium text-center hover:brightness-95 transition-all active:scale-[0.98]"
+          >
+            View & Order
+          </Link>
+          <button
+            onClick={() => onMessage(listing)}
+            className="w-full border border-[var(--color-primary)] text-[var(--color-primary)] px-4 py-2 rounded-md text-sm font-medium hover:bg-[var(--color-primary)]/5 transition-all"
+          >
+            Message Farmer
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 function BuyerMarketplace() {
   const { user, loading: userLoading } = useCurrentUser()
@@ -120,39 +181,49 @@ const [newOrders, setNewOrders] = useState(0)
 
   const activeFilterCount = [selectedCrop, selectedLocation].filter(Boolean).length
 
+  const openChat = (listing) => {
+    setSelectedChat(listing.farmer_id)
+    setChatName(listing.users?.name)
+    setShowChat(true)
+  }
+
+  const recommended = !selectedCrop && !selectedLocation && listings.length > 3
+    ? getRecommended(listings, 3)
+    : []
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--color-background-warm)]">
       {/* Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-10 py-5 bg-[#0F1C2E] backdrop-blur-sm border-b border-gray-700">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-10 py-5 bg-[var(--color-primary-dark)] backdrop-blur-sm border-b border-black/10">
         <Link to="/" className="font-[var(--font-heading)] italic text-2xl text-white">
           AgriMatch
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white">
-          <span className="text-gray-300">Marketplace</span>
-          <Link to="/buyer-orders" className="text-gray-300 hover:text-white relative">
+          <span className="text-white/90">Marketplace</span>
+          <Link to="/buyer-orders" className="text-white/70 hover:text-white relative transition-colors">
             My Orders
             {newOrders > 0 && (
-              <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-2 -right-3 bg-[var(--color-secondary)] text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {newOrders}
               </span>
             )}
           </Link>
-          <Link to="/dashboard" className="text-gray-300 hover:text-white">
+          <Link to="/dashboard" className="text-white/70 hover:text-white transition-colors">
             Dashboard
           </Link>
-          <Link to="/logistics" className="text-gray-300 hover:text-white">
+          <Link to="/logistics" className="text-white/70 hover:text-white transition-colors">
             Logistics
           </Link>
         </nav>
         <div className="flex items-center gap-3">
-          {user && <span className="text-xs text-gray-400 hidden sm:inline">Logged in as {user?.name}</span>}
+          {user && <span className="text-xs text-white/50 hidden sm:inline">Logged in as {user?.name}</span>}
           {user && (
             <button
               onClick={async () => {
                 await supabase.auth.signOut()
                 window.location.href = '/'
               }}
-              className="text-xs border border-gray-600 text-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
+              className="text-xs border border-white/30 text-white/80 px-3 py-1.5 rounded-md hover:bg-white/10 transition-colors"
             >
               Log Out
             </button>
@@ -160,7 +231,7 @@ const [newOrders, setNewOrders] = useState(0)
           {!user && (
             <Link
               to="/auth"
-              className="text-xs border border-gray-600 text-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
+              className="text-xs border border-white/30 text-white/80 px-3 py-1.5 rounded-md hover:bg-white/10 transition-colors"
             >
               Log In
             </Link>
@@ -171,14 +242,14 @@ const [newOrders, setNewOrders] = useState(0)
       <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="font-[var(--font-heading)] text-3xl md:text-4xl">Marketplace</h1>
-            <p className="mt-1 text-gray-600 text-sm">
+            <h1 className="font-[var(--font-heading)] text-3xl md:text-4xl text-[var(--color-charcoal)]">Marketplace</h1>
+            <p className="mt-1 text-[var(--color-charcoal)]/60 text-sm">
               Browse fresh produce from verified farmers across Ghana.
             </p>
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="md:hidden relative px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="md:hidden relative px-4 py-2 border border-black/10 rounded-md text-sm font-medium hover:bg-black/5 transition-colors"
           >
             Filters
             {activeFilterCount > 0 && (
@@ -194,7 +265,7 @@ const [newOrders, setNewOrders] = useState(0)
               className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
                 viewMode === 'list'
                   ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                  : 'border-gray-300 text-gray-600'
+                  : 'border-black/10 text-[var(--color-charcoal)]/70'
               }`}
             >
               List
@@ -204,7 +275,7 @@ const [newOrders, setNewOrders] = useState(0)
               className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
                 viewMode === 'map'
                   ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                  : 'border-gray-300 text-gray-600'
+                  : 'border-black/10 text-[var(--color-charcoal)]/70'
               }`}
             >
               Map
@@ -222,26 +293,26 @@ const [newOrders, setNewOrders] = useState(0)
             } md:block md:col-span-1 space-y-6`}
           >
             <div className="md:hidden flex justify-between items-center mb-4">
-              <h2 className="font-[var(--font-heading)] text-lg">Filters</h2>
+              <h2 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">Filters</h2>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-[var(--color-charcoal)]/50 hover:text-[var(--color-charcoal)] text-sm font-semibold"
               >
-                ✕
+                Close
               </button>
             </div>
 
             {/* Filter Card */}
-            <div className="border border-gray-200 rounded-lg p-5 space-y-5">
+            <div className="bg-white rounded-lg p-5 space-y-5 shadow-sm">
               {/* Crop Type Filter */}
               <div>
-                <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                <label className="text-xs font-semibold tracking-wide text-[var(--color-charcoal)]/50 uppercase">
                   Crop Type
                 </label>
                 <select
                   value={selectedCrop}
                   onChange={(e) => setSelectedCrop(e.target.value)}
-                  className="mt-2 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-all"
+                  className="mt-2 w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-all bg-white"
                 >
                   <option value="">All Crops</option>
                   {CROP_TYPES.map((crop) => (
@@ -254,13 +325,13 @@ const [newOrders, setNewOrders] = useState(0)
 
               {/* Location Filter */}
               <div>
-                <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                <label className="text-xs font-semibold tracking-wide text-[var(--color-charcoal)]/50 uppercase">
                   Location
                 </label>
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="mt-2 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-all"
+                  className="mt-2 w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-all bg-white"
                 >
                   <option value="">All Locations</option>
                   {REGIONS.map((region) => (
@@ -273,7 +344,7 @@ const [newOrders, setNewOrders] = useState(0)
 
               {/* Price Range Filter */}
               <div>
-                <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                <label className="text-xs font-semibold tracking-wide text-[var(--color-charcoal)]/50 uppercase">
                   Price per KG: GH₵{priceRange[0]} - GH₵{priceRange[1]}
                 </label>
                 <div className="mt-3 space-y-2">
@@ -286,7 +357,7 @@ const [newOrders, setNewOrders] = useState(0)
                     onChange={(e) =>
                       setPriceRange([Number(e.target.value), priceRange[1]])
                     }
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
+                    className="w-full h-2 bg-[var(--color-surface)] rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
                   />
                   <input
                     type="range"
@@ -297,7 +368,7 @@ const [newOrders, setNewOrders] = useState(0)
                     onChange={(e) =>
                       setPriceRange([priceRange[0], Number(e.target.value)])
                     }
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
+                    className="w-full h-2 bg-[var(--color-surface)] rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
                   />
                 </div>
               </div>
@@ -306,7 +377,7 @@ const [newOrders, setNewOrders] = useState(0)
               {activeFilterCount > 0 && (
                 <button
                   onClick={resetFilters}
-                  className="w-full py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="w-full py-2 border border-black/10 text-[var(--color-charcoal)]/70 rounded-md text-sm font-medium hover:bg-black/5 transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -316,12 +387,12 @@ const [newOrders, setNewOrders] = useState(0)
 
           {/* Listings Grid */}
           <div className="md:col-span-3">
-            {loading && <p className="text-center text-gray-500 py-12">Loading listings...</p>}
+            {loading && <p className="text-center text-[var(--color-charcoal)]/60 py-12">Loading listings...</p>}
             {error && <p className="text-center text-red-500 py-12">Error: {error}</p>}
 
             {!loading && !error && listings.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No listings match your filters.</p>
+                <p className="text-[var(--color-charcoal)]/60 mb-4">No listings match your filters.</p>
                 <button
                   onClick={resetFilters}
                   className="text-[var(--color-primary)] font-medium hover:underline"
@@ -336,88 +407,41 @@ const [newOrders, setNewOrders] = useState(0)
             )}
 
             {!loading && !error && listings.length > 0 && viewMode === 'list' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map((listing) => (
-                  <motion.div
-                    key={listing.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group"
-                  >
-                    {/* Image */}
-                    <div className="relative h-40 bg-gray-100 overflow-hidden">
-                      <img
-                        src={listing.image_url}
-                        alt={listing.crop_type}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+              <>
+                {recommended.length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="font-[var(--font-heading)] text-xl text-[var(--color-charcoal)] mb-4">
+                      Recommended for You
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {recommended.map((listing) => (
+                        <ListingCard key={listing.id} listing={listing} onMessage={openChat} />
+                      ))}
                     </div>
+                    <div className="mt-8 border-t border-black/5" />
+                  </div>
+                )}
 
-                    {/* Content */}
-                    <div className="p-4">
-                      <h3 className="font-[var(--font-heading)] text-lg text-[var(--color-charcoal)]">
-                        {listing.crop_type}
-                      </h3>
-
-                      <p className="text-sm text-gray-600 mt-1">
-                        {listing.quantity}kg · GH₵{listing.price_per_unit}/kg
-                      </p>
-
-                      <p className="text-xs text-gray-500 mt-2">
-                        {listing.location}
-                      </p>
-
-                      {/* Farmer Info */}
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium text-gray-700">
-                            {listing.users?.name}
-                          </p>
-                          {listing.users?.rating && (
-                            <p className="text-xs text-yellow-600">
-                              ⭐ {listing.users.rating.toFixed(1)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Order Button */}
-                      <div className="mt-4 space-y-2">
-                        <Link
-                          to={`/product/${listing.id}`}
-                          className="block w-full bg-[var(--color-secondary)] text-white px-4 py-2 rounded-md text-sm font-medium text-center hover:brightness-95 transition-all active:scale-[0.98]"
-                        >
-                          View & Order
-                        </Link>
-                        <button
-                          onClick={() => {
-                            setSelectedChat(listing.farmer_id)
-                            setChatName(listing.users?.name)
-                            setShowChat(true)
-                          }}
-                          className="w-full border border-[#2E7D32] text-[#2E7D32] px-4 py-2 rounded-md text-sm font-medium hover:bg-[#E8F5E9] transition-all"
-                        >
-                          Message Farmer
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                  {listings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} onMessage={openChat} />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 px-6 md:px-10 py-12 text-center mt-16">
+      <footer className="border-t border-black/10 px-6 md:px-10 py-12 text-center mt-16">
         <div className="max-w-2xl mx-auto">
           <p className="font-[var(--font-heading)] text-[var(--color-charcoal)] text-lg">AgriMatch</p>
-          <div className="my-4 h-px bg-gray-200" />
-          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+          <div className="my-4 h-px bg-black/10" />
+          <p className="text-[var(--color-charcoal)]/60 text-sm leading-relaxed mb-4">
             Empowering the backbone of Ghana's economy through technology that respects the soil.
           </p>
-          <p className="text-gray-500 text-xs tracking-wide">
+          <p className="text-[var(--color-charcoal)]/40 text-xs tracking-wide">
             © 2026 AgriMatch · Techiman Regional Hub, Bono East
           </p>
         </div>
@@ -427,12 +451,14 @@ const [newOrders, setNewOrders] = useState(0)
       {!showChat && !selectedChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999] text-2xl"
+          className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 w-14 h-14 rounded-full bg-[var(--color-secondary)] text-white flex items-center justify-center shadow-lg hover:brightness-95 transition-all z-[9999]"
           title="Open messages"
         >
-          💬
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
           {unreadMessages > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-[var(--color-secondary-dark)] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
               {unreadMessages}
             </span>
           )}
