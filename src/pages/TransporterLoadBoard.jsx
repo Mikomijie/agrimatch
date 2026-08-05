@@ -39,10 +39,16 @@ function PhotoUploadModal({ title, onClose, onSubmit, submitting }) {
             </button>
           </div>
         ) : (
-          <label className="block border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all mb-4">
-            <input type="file" accept="image/*" capture="environment" onChange={handleSelect} className="hidden" />
-            <p className="text-sm font-semibold text-[var(--color-charcoal)]/80">Tap to take a photo</p>
-          </label>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <label className="block border-2 border-dashed border-black/15 rounded-lg p-4 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all">
+              <input type="file" accept="image/*" capture="environment" onChange={handleSelect} className="hidden" />
+              <p className="text-xs sm:text-sm font-semibold text-[var(--color-charcoal)]/80">Take Photo</p>
+            </label>
+            <label className="block border-2 border-dashed border-black/15 rounded-lg p-4 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all">
+              <input type="file" accept="image/*" onChange={handleSelect} className="hidden" />
+              <p className="text-xs sm:text-sm font-semibold text-[var(--color-charcoal)]/80">Upload from Gallery</p>
+            </label>
+          </div>
         )}
 
         <div className="flex gap-3">
