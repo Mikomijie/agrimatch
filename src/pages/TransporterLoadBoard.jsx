@@ -332,9 +332,20 @@ function TransporterLoadBoard() {
             </div>
           </div>
         </div>
+        {/* Mobile bottom nav */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 z-40 flex items-center justify-around px-2 py-3">
+          <Link to="/marketplace" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+            Market
+          </Link>
+          <Link to="/dashboard" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+            Dashboard
+          </Link>
+          <button onClick={() => navigate('/role-switch')} className="text-xs font-semibold text-[var(--color-primary)]">
+            Switch Role
+          </button>
+        </nav>
       </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-12 pb-24 md:pb-12">
         {/* Hero & Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6 sm:mb-8">
           <div>

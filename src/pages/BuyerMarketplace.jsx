@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
@@ -73,6 +73,7 @@ function ListingCard({ listing, onMessage }) {
 }
 
 function BuyerMarketplace() {
+  const navigate = useNavigate()
   const { user, loading: userLoading } = useCurrentUser()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -240,9 +241,26 @@ const [newOrders, setNewOrders] = useState(0)
             </Link>
           )}
         </div>
+        {/* Mobile bottom nav */}
+        {user && (
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 z-40 flex items-center justify-around px-2 py-3">
+            <Link to="/dashboard" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+              Dashboard
+            </Link>
+            <Link to="/buyer-orders" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+              My Orders
+            </Link>
+            <Link to="/logistics" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+              Logistics
+            </Link>
+            <button onClick={() => navigate('/role-switch')} className="text-xs font-semibold text-[var(--color-primary)]">
+              Switch Role
+            </button>
+          </nav>
+        )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10 pb-24 md:pb-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl md:text-4xl text-[var(--color-charcoal)]">Marketplace</h1>
