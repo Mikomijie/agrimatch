@@ -172,8 +172,9 @@ const startEdit = (listing) => {
     setDeletingId(null)
   }
   useEffect(() => {
+    if (!user) return
+
     async function fetchMyListings() {
-      if (!user) return
       const { data } = await supabase
         .from('listings')
         .select('*')
