@@ -18,6 +18,7 @@ const FRESHNESS_OPTIONS = [
   { id: 'Harvested Today', label: 'Harvested Today' },
   { id: 'Harvested Yesterday', label: 'Harvested Yesterday' },
   { id: 'Harvesting Tomorrow', label: 'Harvesting Tomorrow' },
+  { id: 'Future Harvest', label: 'Future Harvest (choose date)' },
 ]
 
 function FarmerDashboard() {
@@ -25,6 +26,7 @@ function FarmerDashboard() {
   const { user, loading: userLoading } = useCurrentUser()
   const [selectedCrop, setSelectedCrop] = useState('Tomatoes')
   const [freshness, setFreshness] = useState('Harvested Today')
+  const [expectedHarvestDate, setExpectedHarvestDate] = useState('')
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [location, setLocation] = useState('')
@@ -93,7 +95,7 @@ const [pendingOrders, setPendingOrders] = useState(0)
       imageUrl = publicUrlData.publicUrl
     }
 
-    const { data: newListing, error } = await supabase
+   const { data: newListing, error } = await supabase
       .from('listings')
       .insert({
         farmer_id: user.id,
@@ -103,6 +105,7 @@ const [pendingOrders, setPendingOrders] = useState(0)
         location,
         freshness,
         image_url: imageUrl,
+        expected_harvest_date: freshness === 'Future Harvest' ? expectedHarvestDate : null,
       })
       .select()
       .single()
@@ -191,6 +194,20 @@ const startEdit = (listing) => {
           setNewOrderMessage('🎉 New order received!')
           setShowOrderNotification(true)
           setTimeout(() => setShowOrderNotification(false), 4000)
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'listings', filter: `farmer_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new.quantity === 0 && payload.old.quantity > 0) {
+            setNewOrderMessage(`${payload.new.crop_type} listing is now sold out!`)
+            setShowOrderNotification(true)
+            setTimeout(() => setShowOrderNotification(false), 4000)
+          }
+          setMyListings((prev) =>
+            prev.map((l) => (l.id === payload.new.id ? { ...l, quantity: payload.new.quantity } : l))
+          )
         }
       )
       .subscribe()
@@ -518,6 +535,16 @@ const startEdit = (listing) => {
                     </button>
                   ))}
                 </div>
+                {freshness === 'Future Harvest' && (
+                  <input
+                    type="date"
+                    required
+                    value={expectedHarvestDate}
+                    onChange={(e) => setExpectedHarvestDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="mt-3 w-full border-2 border-black/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-base focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                  />
+                )}
               </div>
 
               {/* Alerts */}
