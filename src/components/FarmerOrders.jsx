@@ -46,7 +46,7 @@ function FarmerOrders() {
     if (transporterIds.length) {
       const { data: tData } = await supabase
         .from('transporters')
-        .select('user_id, vehicle_type, users(name)')
+        .select('user_id, vehicle_type, is_verified_agent, users(name)')
         .in('user_id', transporterIds)
       const map = {}
       tData?.forEach(t => { map[t.user_id] = t })
@@ -152,6 +152,9 @@ function FarmerOrders() {
                   {transporter ? (
                     <p className="text-xs text-[var(--color-charcoal)]/70">
                       Transporter: <span className="font-semibold">{transporter.users?.name}</span> — {transporter.vehicle_type}
+                      {transporter.is_verified_agent && (
+                        <span className="ml-2 text-[10px] font-bold text-white bg-[var(--color-primary)] px-1.5 py-0.5 rounded">CERTIFIED</span>
+                      )}
                     </p>
                   ) : order.status === 'pending' ? (
                     <p className="text-xs text-[var(--color-charcoal)]/50">Awaiting payment confirmation</p>

@@ -61,7 +61,7 @@ function OrderTracking() {
     if (data.transporter_id) {
       const { data: tData } = await supabase
         .from('transporters')
-        .select('vehicle_type, capacity_kg, users(name)')
+        .select('vehicle_type, capacity_kg, is_verified_agent, users(name)')
         .eq('user_id', data.transporter_id)
         .maybeSingle()
       setTransporter(tData)
@@ -190,7 +190,12 @@ function OrderTracking() {
                 <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-2">Transporter</p>
                 {transporter ? (
                   <div>
-                    <p className="font-bold text-lg text-[var(--color-charcoal)]">{transporter.users?.name}</p>
+                    <p className="font-bold text-lg text-[var(--color-charcoal)] flex items-center gap-2">
+                      {transporter.users?.name}
+                      {transporter.is_verified_agent && (
+                        <span className="text-[10px] font-bold text-white bg-[var(--color-primary)] px-1.5 py-0.5 rounded">CERTIFIED</span>
+                      )}
+                    </p>
                     <p className="text-sm text-[var(--color-charcoal)]/60">{transporter.vehicle_type} · {transporter.capacity_kg}kg capacity</p>
                   </div>
                 ) : (
