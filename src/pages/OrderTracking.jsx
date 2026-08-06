@@ -70,8 +70,18 @@ function OrderTracking() {
     setLoading(false)
   }
 
-  useEffect(() => {
+ useEffect(() => {
     fetchOrder()
+
+    const channel = supabase
+      .channel(`order-tracking-${orderId}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        () => fetchOrder()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [orderId])
 
  if (loading) return <p className="p-10 text-center text-[var(--color-charcoal)]/60">Loading order...</p>

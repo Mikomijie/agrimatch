@@ -200,6 +200,24 @@ function TransporterLoadBoard() {
     }
   }, [view, user])
 
+  useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel('transporter-loadboard')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => fetchOrders()
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'transport_requests' },
+        () => fetchOrders()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user, view])
+
   const handleAccept = async (orderId) => {
     const { error } = await supabase
       .from('orders')

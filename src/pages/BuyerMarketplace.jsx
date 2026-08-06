@@ -128,6 +128,16 @@ const [newOrders, setNewOrders] = useState(0)
     }
 
     fetchListings()
+
+    const listingsChannel = supabase
+      .channel('marketplace-listings')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'listings' },
+        () => fetchListings()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(listingsChannel)
   }, [selectedCrop, selectedLocation, priceRange])
 
   useEffect(() => {
