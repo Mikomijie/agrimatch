@@ -334,13 +334,16 @@ function TransporterLoadBoard() {
         </div>
         {/* Mobile bottom nav */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 z-40 flex items-center justify-around px-2 py-3">
-          <Link to="/marketplace" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+          <Link to="/marketplace" className="flex flex-col items-center gap-1 text-xs text-[var(--color-charcoal)]/70">
+            <span className="text-lg">🛒</span>
             Market
           </Link>
-          <Link to="/dashboard" className="text-xs font-semibold text-[var(--color-charcoal)]/70">
+          <Link to="/dashboard" className="flex flex-col items-center gap-1 text-xs text-[var(--color-charcoal)]/70">
+            <span className="text-lg">🏠</span>
             Dashboard
           </Link>
-          <button onClick={() => navigate('/role-switch')} className="text-xs font-semibold text-[var(--color-primary)]">
+          <button onClick={() => navigate('/role-switch')} className="flex flex-col items-center gap-1 text-xs text-[var(--color-primary)]">
+            <span className="text-lg">🔄</span>
             Switch Role
           </button>
         </nav>
