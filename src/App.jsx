@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProductDetail from './pages/ProductDetail'
+import BulkOrderRequest from './pages/BulkOrderRequest'
 import PaymentCallback from './pages/PaymentCallback'
 import FarmerDashboard from './pages/FarmerDashboard'
 import Landing from './pages/Landing'
@@ -32,6 +33,7 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/role-switch" element={<RoleSwitch />} />
         <Route path="/payment-callback" element={<PaymentCallback />} />
+        <Route path="/bulk-order" element={<BulkOrderRequest />} />
         <Route path="/transporter-registration" element={<TransporterRegistration />} />
       </Routes>
     </BrowserRouter>

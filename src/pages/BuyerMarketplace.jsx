@@ -249,6 +249,12 @@ const [newOrders, setNewOrders] = useState(0)
             <p className="mt-1 text-[var(--color-charcoal)]/60 text-sm">
               Browse fresh produce from verified farmers across Ghana.
             </p>
+            <Link
+              to="/bulk-order"
+              className="inline-block mt-3 text-sm font-semibold text-[var(--color-primary)] underline hover:no-underline"
+            >
+              Need a large quantity? Request a bulk order →
+            </Link>
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
