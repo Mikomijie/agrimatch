@@ -1,8 +1,10 @@
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useFlutterwave } from 'flutterwave-react-v3'
 import { supabase } from '../lib/supabaseClient'
 import { useCurrentUser } from '../lib/useCurrentUser'
+import { notify } from '../lib/notifications'
 import ReviewModal from '../components/ReviewModal'
 
 const STATUS_STEPS = ['pending', 'confirmed', 'in_transit', 'delivered']
@@ -38,6 +40,7 @@ function OrderTracking() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [paymentProcessing, setPaymentProcessing] = useState(false)
 
   const { orderId } = useParams()
 
@@ -46,7 +49,7 @@ function OrderTracking() {
 
     const { data, error } = await supabase
       .from('orders')
-      .select('*, listings(crop_type, location, quantity, image_url, users(name))')
+      .select('*, listings(crop_type, location, quantity, price_per_unit, image_url, users(name))')
       .eq('id', orderId)
       .single()
 
@@ -70,7 +73,7 @@ function OrderTracking() {
     setLoading(false)
   }
 
- useEffect(() => {
+  useEffect(() => {
     fetchOrder()
 
     const channel = supabase
@@ -84,7 +87,7 @@ function OrderTracking() {
     return () => supabase.removeChannel(channel)
   }, [orderId])
 
- if (loading) return <p className="p-10 text-center text-[var(--color-charcoal)]/60">Loading order...</p>
+  if (loading) return <p className="p-10 text-center text-[var(--color-charcoal)]/60">Loading order...</p>
   if (error) return <p className="p-10 text-center text-red-500">Error: {error}</p>
   if (!order) return (
     <div className="p-10 text-center">
@@ -99,6 +102,57 @@ function OrderTracking() {
     await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id)
     setOrder((prev) => ({ ...prev, status: 'completed' }))
     setShowReviewModal(true)
+  }
+
+  const flutterConfig = {
+    public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+    tx_ref: `AGRIMATCH-${order.id}`,
+    amount: Number(order.total_price),
+    currency: 'GHS',
+    payment_options: 'card,mobilemoney,ussd',
+    redirect_url: `${window.location.origin}/payment-callback`,
+    customer: {
+      email: user?.email || 'buyer@agrimatch.com',
+      phonenumber: user?.phone || '0550000000',
+      name: user?.name || 'AgriMatch Buyer',
+    },
+    customizations: {
+      title: `AgriMatch - ${order.listings?.crop_type}`,
+      description: `${order.quantity}kg of ${order.listings?.crop_type}`,
+    },
+  }
+
+  const handleFlutterPayment = useFlutterwave(flutterConfig)
+
+  const handlePayNow = () => {
+    setPaymentProcessing(true)
+
+    handleFlutterPayment({
+      onSuccess: async (response) => {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            transaction_id: response.transaction_id,
+            payment_date: new Date().toISOString(),
+            status: 'confirmed',
+          })
+          .eq('id', order.id)
+
+        if (updateError) {
+          notify.error('Payment recorded but order update failed')
+          setPaymentProcessing(false)
+          return
+        }
+
+        notify.success('Payment successful! Order confirmed.')
+        setPaymentProcessing(false)
+        fetchOrder()
+      },
+      onClose: () => {
+        setPaymentProcessing(false)
+      },
+    })
   }
 
   return (
@@ -136,8 +190,8 @@ function OrderTracking() {
                 Tracking your <span className="text-[var(--color-primary)] italic">harvest.</span>
               </h1>
               <p className="text-base sm:text-lg text-[var(--color-charcoal)]/70 max-w-lg">
-  Your order of {order.quantity}kg {order.listings?.crop_type} from {order.listings?.users?.name} is currently {order.status === 'delivered' || order.status === 'completed' ? 'delivered.' : 'being processed.'}
-</p>
+                Your order of {order.quantity}kg {order.listings?.crop_type} from {order.listings?.users?.name} is currently {order.status === 'delivered' || order.status === 'completed' ? 'delivered.' : order.payment_status === 'pending' ? 'awaiting payment.' : 'being processed.'}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${STATUS_DOT[order.status] || 'bg-[var(--color-charcoal)]/30'}`} />
@@ -145,6 +199,21 @@ function OrderTracking() {
             </div>
           </div>
         </div>
+
+        {order.payment_status === 'pending' && (
+          <div className="mb-10 bg-[var(--color-secondary-light)]/25 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p className="text-sm sm:text-base font-semibold text-[var(--color-secondary-dark)]">
+              This order is awaiting payment — GH₵{Number(order.total_price).toLocaleString()}
+            </p>
+            <button
+              onClick={handlePayNow}
+              disabled={paymentProcessing}
+              className="bg-[var(--color-primary)] text-white px-6 py-2.5 rounded-lg font-bold hover:brightness-95 active:scale-[0.98] transition-all disabled:opacity-60 whitespace-nowrap"
+            >
+              {paymentProcessing ? 'Processing...' : `Pay GH₵${Number(order.total_price).toLocaleString()}`}
+            </button>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8 sm:gap-10 lg:gap-12">
           {/* Timeline */}
@@ -224,28 +293,28 @@ function OrderTracking() {
               </div>
 
               <div>
-                <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-2">Total Paid</p>
+                <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-2">Total {order.payment_status === 'pending' ? 'Due' : 'Paid'}</p>
                 <p className="font-[var(--font-heading)] font-bold text-lg text-[var(--color-secondary)]">GH₵{Number(order.total_price).toLocaleString()}</p>
               </div>
 
               <div className="border-t border-black/10 pt-6">
-  {order.status === 'delivered' && (
-    <button
-      onClick={handleConfirmDelivery}
-      className="w-full mb-4 bg-[var(--color-primary)] text-white py-3 rounded-lg font-bold hover:brightness-95 transition-all"
-    >
-      Confirm Delivery Received
-    </button>
-  )}
-  {order.status === 'completed' && (
-    <button
-      onClick={() => setShowReviewModal(true)}
-      className="w-full mb-4 border-2 border-[var(--color-primary)] text-[var(--color-primary)] py-3 rounded-lg font-bold hover:bg-[var(--color-primary)]/5 transition-all"
-    >
-      Leave a Review
-    </button>
-  )}
-  <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-3">Produce</p>
+                {order.status === 'delivered' && (
+                  <button
+                    onClick={handleConfirmDelivery}
+                    className="w-full mb-4 bg-[var(--color-primary)] text-white py-3 rounded-lg font-bold hover:brightness-95 transition-all"
+                  >
+                    Confirm Delivery Received
+                  </button>
+                )}
+                {order.status === 'completed' && (
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="w-full mb-4 border-2 border-[var(--color-primary)] text-[var(--color-primary)] py-3 rounded-lg font-bold hover:bg-[var(--color-primary)]/5 transition-all"
+                  >
+                    Leave a Review
+                  </button>
+                )}
+                <p className="text-xs font-bold tracking-wider text-[var(--color-charcoal)]/60 uppercase mb-3">Produce</p>
                 <div className="flex items-center gap-3">
                   <img
                     src={order.listings?.image_url}

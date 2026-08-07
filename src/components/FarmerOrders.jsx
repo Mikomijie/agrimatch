@@ -20,6 +20,18 @@ function FarmerOrders() {
 
   useEffect(() => {
     fetchOrders()
+
+    if (!user) return
+
+    const channel = supabase
+      .channel('farmer-orders-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => fetchOrders()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [user])
 
   const fetchOrders = async () => {
