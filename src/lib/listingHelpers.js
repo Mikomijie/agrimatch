@@ -1,5 +1,5 @@
 export function isListingExpired(listing) {
-  if (!listing || listing.freshness === 'Harvesting Tomorrow') return false
+  if (!listing || listing.freshness === 'Harvesting Tomorrow' || listing.freshness === 'Future Harvest') return false
 
   const harvestTime = new Date(listing.created_at)
   if (listing.freshness === 'Harvested Yesterday') {

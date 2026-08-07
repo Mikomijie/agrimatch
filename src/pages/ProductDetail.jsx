@@ -74,7 +74,7 @@ function ProductDetail() {
   }, [product])
 
   useEffect(() => {
-    if (!product || product.freshness === 'Harvesting Tomorrow') return
+    if (!product || product.freshness === 'Harvesting Tomorrow' || product.freshness === 'Future Harvest') return
 
     const getDeadline = () => {
       const harvestTime = new Date(product.created_at)
@@ -307,6 +307,14 @@ function ProductDetail() {
             <div className="bg-[var(--color-surface)] rounded-lg p-4 sm:p-5">
               <p className="text-sm sm:text-base font-semibold text-[var(--color-charcoal)]/80">
                 This harvest is expected tomorrow — order now to reserve it.
+              </p>
+            </div>
+          ) : product.freshness === 'Future Harvest' ? (
+            <div className="bg-[var(--color-surface)] rounded-lg p-4 sm:p-5">
+              <p className="text-sm sm:text-base font-semibold text-[var(--color-charcoal)]/80">
+                {product.expected_harvest_date
+                  ? `Expected harvest: ${new Date(product.expected_harvest_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} — reserve now to guarantee this batch.`
+                  : 'This produce is forecasted for a future harvest — order now to reserve it.'}
               </p>
             </div>
           ) : timeLeft === 'closed' ? (
