@@ -9,6 +9,8 @@ import ChatWindow from '../components/ChatWindow'
 import ConversationList from '../components/ConversationList'
 import { isListingExpired } from '../lib/listingHelpers'
 
+
+const AHNLICH_ENABLED = true
 const CROP_TYPES = ['Tomatoes', 'Peppers', 'Garden Eggs', 'Okra']
 const REGIONS = ['Bono East', 'Ashanti', 'Northern', 'Eastern', 'Volta', 'Greater Accra']
 
@@ -84,6 +86,8 @@ function BuyerMarketplace() {
   const [selectedLocation, setSelectedLocation] = useState('')
   const [priceRange, setPriceRange] = useState([0, 5000])
   const [showFilters, setShowFilters] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [semanticResults, setSemanticResults] = useState(null)
   const [viewMode, setViewMode] = useState('list')
   const [showChat, setShowChat] = useState(false)
   const [selectedChat, setSelectedChat] = useState(null)
@@ -281,6 +285,51 @@ const [newOrders, setNewOrders] = useState(0)
             <p className="mt-1 text-[var(--color-charcoal)]/60 text-sm">
               Browse fresh produce from verified farmers across Ghana.
             </p>
+            {AHNLICH_ENABLED && (
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search e.g. fresh tomatoes in Ashanti..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      const res = await fetch('/api/ahnlich-search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: searchQuery }),
+                      })
+                      const data = await res.json()
+                      setSemanticResults(data.listings || [])
+                    }
+                  }}
+                  className="flex-1 border border-black/10 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 bg-white"
+                />
+                <button
+                  onClick={async () => {
+                    if (!searchQuery.trim()) return setSemanticResults(null)
+                    const res = await fetch('/api/ahnlich-search', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ query: searchQuery }),
+                    })
+                    const data = await res.json()
+                    setSemanticResults(data.listings || [])
+                  }}
+                  className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md text-sm font-medium hover:brightness-95 transition-all"
+                >
+                  Search
+                </button>
+                {semanticResults && (
+                  <button
+                    onClick={() => { setSemanticResults(null); setSearchQuery('') }}
+                    className="px-3 py-2 border border-black/10 rounded-md text-sm text-[var(--color-charcoal)]/60 hover:bg-black/5"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
             <Link
               to="/bulk-order"
               className="inline-block mt-3 text-sm font-semibold text-[var(--color-primary)] underline hover:no-underline"
@@ -447,7 +496,19 @@ const [newOrders, setNewOrders] = useState(0)
               <FarmerMap listings={listings} />
             )}
 
-            {!loading && !error && listings.length > 0 && viewMode === 'list' && (
+            {semanticResults && (
+              <div className="mb-6">
+                <p className="text-sm text-[var(--color-charcoal)]/50 mb-4">
+                  {semanticResults.length} semantic results for "{searchQuery}"
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {semanticResults.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} onMessage={openChat} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {!semanticResults && !loading && !error && listings.length > 0 && viewMode === 'list' && (
               <>
                 {recommended.length > 0 && (
                   <div className="mb-8">
